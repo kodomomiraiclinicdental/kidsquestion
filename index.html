@@ -736,13 +736,37 @@
         </div>
 
         <!-- Screen 5: Preview -->
-        <div id="screen5" class="screen"></div>
+        <div id="screen5" class="screen">
+            <div id="downloadButtons" style="text-align: center; margin-bottom: 20px;">
+                <button class="btn" id="downloadBtn">ダウンロード</button>
+                <button class="btn btn-secondary" id="backToStaffBtn">戻る</button>
+            </div>
+        </div>
     </div>
     
     <!-- メッセージ表示用のシンプルなUI -->
     <div id="messageBox" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px; background: rgba(0,0,0,0.8); color: white; border-radius: 10px; z-index: 2000;"></div>
 
-    <script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script type="module">
+        // Firebase ライブラリを読み込み
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Firebase コンソールで取得した設定をここに貼り付ける
+        const firebaseConfig = {
+          apiKey: "AIzaSyDbc7VsXUFiblYv4csNSzUJoqp3pBNa68A",
+          authDomain: "kidsquestionapp.firebaseapp.com",
+          projectId: "kidsquestionapp",
+          storageBucket: "kidsquestionapp.firebasestorage.app",
+          messagingSenderId: "1007044552648",
+          appId: "1:1007044552648:web:d5d4661f2d9f05f819c2fd"
+        };
+    
+        // Firebase を初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // DOM要素をキャッシュ
         const screen1 = document.getElementById('screen1');
         const screen2 = document.getElementById('screen2');
@@ -771,6 +795,9 @@
         const generateBtn = document.getElementById('generateBtn');
 
         const messageBox = document.getElementById('messageBox');
+        
+        const downloadBtn = document.getElementById('downloadBtn');
+        const backToStaffBtn = document.getElementById('backToStaffBtn');
 
         // メモリ内データ管理
         let patientInfo = {
@@ -1044,7 +1071,11 @@
         }
 
         // 記録表プレビューの生成
-        function generatePreview() {
+        async function generatePreview() {
+            // ダウンロードボタンを一時的に非表示にする
+            if(downloadBtn) downloadBtn.style.display = 'none';
+            if(backToStaffBtn) backToStaffBtn.style.display = 'none';
+
             while (screen5.firstChild) {
                 screen5.removeChild(screen5.firstChild);
             }
@@ -1207,11 +1238,11 @@
             // リスクレベルの表示
             const riskLevelBox = document.createElement('div');
             riskLevelBox.className = 'risk-level-box';
-            riskLevelBox.textContent = `
-6点以下：安全域
-7点：注意域
-8〜9点：危険域
-10点以上：非常に危険
+            riskLevelBox.innerHTML = `
+                <div>6点以下：安全域</div>
+                <div>7点：注意域</div>
+                <div>8〜9点：危険域</div>
+                <div>10点以上：非常に危険</div>
             `.trim();
             previewContainer.appendChild(riskLevelBox);
 
@@ -1392,8 +1423,28 @@
             previewContainer.appendChild(memoSection);
             
             screen5.appendChild(previewContainer);
+            
+            // ダウンロードボタンを表示
+            if(downloadBtn) downloadBtn.style.display = 'inline-block';
+            if(backToStaffBtn) backToStaffBtn.style.display = 'inline-block';
         }
         
+        // データ保存処理
+        async function saveToFirestore() {
+            try {
+                const docRef = await addDoc(collection(db, "kids-records"), {
+                    patientInfo: patientInfo,
+                    answers: answers,
+                    scores: calculateScore(),
+                    timestamp: serverTimestamp()
+                });
+                showMessage("記録表を保存しました！");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("保存に失敗しました。");
+            }
+        }
+
         // 画面遷移ロジック
         function showScreen(screen) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1451,8 +1502,43 @@
             } else {
                 generatePreview();
                 showScreen(screen5);
+                // データをデータベースに保存する
+                saveToFirestore();
             }
         });
+        
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', function() {
+                const previewContent = document.querySelector('.preview-container');
+                if (!previewContent) {
+                    showMessage('記録表が見つかりません。');
+                    return;
+                }
+                
+                html2canvas(previewContent, {
+                    scale: 2, // 解像度を上げてきれいに表示
+                    useCORS: true,
+                    allowTaint: true,
+                }).then(canvas => {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = `記録表_${patientInfo.number}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }).catch(err => {
+                    console.error('画像のダウンロードに失敗しました。', err);
+                    showMessage('画像のダウンロードに失敗しました。');
+                });
+            });
+        }
+        
+        if (backToStaffBtn) {
+            backToStaffBtn.addEventListener('click', function() {
+                showScreen(screen4);
+            });
+        }
 
         // 初期化
         initializeScreen1();
