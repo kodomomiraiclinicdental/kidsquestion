@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>こどもみらいクリニックデンタル - みらいく予防プログラム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'MS Gothic', 'Yu Gothic', 'sans-serif';
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header h2 {
+            color: #764ba2;
+            font-size: 20px;
+            font-weight: normal;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 16px;
+        }
+
+        .radio-label:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .radio-label input[type="radio"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .radio-label.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-right: 15px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .question-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .question-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 18px 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 16px;
+        }
+
+        .checkbox-label:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .checkbox-label input[type="checkbox"],
+        .checkbox-label input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            margin-right: 15px;
+            position: relative;
+            flex-shrink: 0;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            border-radius: 6px;
+        }
+
+        .checkbox-label input[type="radio"]:checked,
+        .checkbox-label input[type="checkbox"]:checked {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        .checkbox-label input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .checkbox-label input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .checkbox-label.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .checkbox-label.selected input[type="checkbox"],
+        .checkbox-label.selected input[type="radio"] {
+            border-color: white;
+        }
+
+        .checkbox-label.selected input[type="checkbox"]:checked,
+        .checkbox-label.selected input[type="radio"]:checked {
+            background: white;
+            border-color: white;
+        }
+
+        .checkbox-label.selected input[type="checkbox"]:checked::after {
+            color: #667eea;
+        }
+
+        .checkbox-label.selected input[type="radio"]:checked::after {
+            background: #667eea;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .result-summary {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .small-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            background: #dee2e6;
+            color: #6c757d;
+        }
+
+        /* 記録表プレビュー画面のスタイル */
+        .preview-container {
+            background: white;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            padding: 30px;
+            font-family: 'MS Gothic', 'Yu Gothic', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 50px;
+        }
+
+        .preview-left {
+            width: 50%;
+        }
+
+        .preview-right {
+            width: 50%;
+        }
+        
+        .preview-title-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .preview-title-number {
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .preview-subtitle {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .today-content-container {
+            width: 100%;
+            margin-bottom: 20px;
+            margin-top: -10px;
+        }
+
+        .today-content-box {
+            border: 1px solid #000;
+            padding: 8px;
+            min-height: 80px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .dh-record {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .dh-record-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .dh-record-row {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .dh-record-label {
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        .risk-section .section-title {
+            background: #000;
+            color: white;
+            padding: 4px 8px;
+            display: inline-block;
+            margin-bottom: 0;
+        }
+
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .risk-table th,
+        .risk-table td {
+            border: 2px solid #000;
+            padding: 8px 12px;
+            text-align: center;
+            vertical-align: top;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .risk-table th {
+            background: white;
+            font-weight: bold;
+        }
+
+        .risk-table .red-dot {
+            color: red;
+            font-weight: bold;
+        }
+
+        .score-table {
+            width: 60%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .score-table th,
+        .score-table td {
+            border: 1px solid #000;
+            padding: 6px 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .score-table th {
+            font-weight: bold;
+        }
+
+        .score-table .red-border {
+            border: 2px solid red;
+        }
+        
+        .risk-level-box {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .total-score {
+            text-align: right;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .diagnosis-section {
+            margin-top: 20px;
+        }
+        
+        .oral-exam-content {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .oral-exam-diagram {
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .oral-exam-line {
+            height: 2px;
+            background-color: black;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .oral-exam-options {
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        .oral-exam-options > div {
+            white-space: nowrap;
+        }
+
+        .oral-exam-checkbox {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 1px solid #000;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        
+        .diagnosis-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .oral-function-content {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .oral-function-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 2px solid #000;
+            border-collapse: collapse;
+            font-weight: bold;
+            height: 80px;
+        }
+        
+        .oral-function-grid > div {
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .oral-function-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .oral-function-options-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .oral-function-options-col {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .oral-function-box {
+            border: 2px solid #000;
+            padding: 10px;
+            min-height: 60px;
+        }
+
+        .treatment-plan {
+            margin-top: 20px;
+        }
+
+        .checklist-section {
+            margin-top: 20px;
+        }
+
+        .checklist-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .checklist-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .checklist-item-col {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding-right: 20px;
+        }
+        
+        .checklist-item-col:last-child {
+            padding-right: 0;
+        }
+
+        .checkbox-square {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        .small-text {
+            font-size: 12px;
+        }
+        .flex-row {
+            display: flex;
+            align-items: baseline;
+        }
+        .flex-spacer {
+            flex-grow: 1;
+        }
+        .text-nowrap {
+            white-space: nowrap;
+        }
+        .text-center {
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .header h2 {
+                font-size: 18px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .navigation {
+                flex-direction: column-reverse;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Screen 1: Patient Information -->
+        <div id="screen1" class="screen active">
+            <div class="header">
+                <h1>こどもみらいクリニックデンタル</h1>
+                <h2>みらいく予防プログラム〜Kids〜</h2>
+            </div>
+            
+            <div class="form-group">
+                <label>担当者</label>
+                <div class="radio-group" id="staffRadioGroup"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="patientNumber">カルテ番号</label>
+                <input type="text" id="patientNumber" placeholder="カルテ番号を入力してください">
+            </div>
+            
+            <div class="form-group">
+                <label>フッ化物塗布間隔</label>
+                <div class="radio-group" id="fluorideRadioGroup"></div>
+            </div>
+            
+            <button class="btn" id="startBtn" disabled>問診を開始する</button>
+        </div>
+
+        <!-- Screen 2: Questions -->
+        <div id="screen2" class="screen">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div id="questionContainer"></div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" id="prevBtn">← 戻る</button>
+                <button class="btn" id="nextBtn" disabled>次へ →</button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Thank You -->
+        <div id="screen3" class="screen">
+            <div class="header">
+                <h1>ご回答ありがとうございました</h1>
+            </div>
+            
+            <div class="result-summary" id="resultSummary"></div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" id="backToQ4Btn">← 戻る</button>
+                <button class="btn small-btn" id="staffBtn">医院用（押さないでください）</button>
+            </div>
+        </div>
+
+        <!-- Screen 4: Staff Input -->
+        <div id="screen4" class="screen">
+            <div class="header">
+                <h1>歯科衛生士入力画面</h1>
+            </div>
+            
+            <div class="result-summary" id="staffResultSummary"></div>
+            
+            <div class="form-group">
+                <label for="pcrValue">PCR値（%）</label>
+                <input type="number" id="pcrValue" placeholder="PCR値を入力">
+            </div>
+            
+            <div class="form-group">
+                <label for="dmfValue">DMF歯数</label>
+                <input type="number" id="dmfValue" placeholder="DMF歯数を入力">
+            </div>
+            
+            <div class="navigation">
+                <button class="btn btn-secondary" id="backToThankYouBtn">← 戻る</button>
+                <button class="btn" id="generateBtn">記録表を生成</button>
+            </div>
+        </div>
+
+        <!-- Screen 5: Preview -->
+        <div id="screen5" class="screen"></div>
+    </div>
+    
+    <!-- メッセージ表示用のシンプルなUI -->
+    <div id="messageBox" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px; background: rgba(0,0,0,0.8); color: white; border-radius: 10px; z-index: 2000;"></div>
+
+    <script>
+        // DOM要素をキャッシュ
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
+        const screen3 = document.getElementById('screen3');
+        const screen4 = document.getElementById('screen4');
+        const screen5 = document.getElementById('screen5');
+
+        const staffRadioGroup = document.getElementById('staffRadioGroup');
+        const fluorideRadioGroup = document.getElementById('fluorideRadioGroup');
+        const patientNumberInput = document.getElementById('patientNumber');
+        const startBtn = document.getElementById('startBtn');
+
+        const progressFill = document.getElementById('progressFill');
+        const questionContainer = document.getElementById('questionContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        const resultSummaryContainer = document.getElementById('resultSummary');
+        const backToQ4Btn = document.getElementById('backToQ4Btn');
+        const staffBtn = document.getElementById('staffBtn');
+
+        const staffResultSummaryContainer = document.getElementById('staffResultSummary');
+        const pcrValueInput = document.getElementById('pcrValue');
+        const dmfValueInput = document.getElementById('dmfValue');
+        const backToThankYouBtn = document.getElementById('backToThankYouBtn');
+        const generateBtn = document.getElementById('generateBtn');
+
+        const messageBox = document.getElementById('messageBox');
+
+        // メモリ内データ管理
+        let patientInfo = {
+            staff: '',
+            number: '',
+            fluoride: '',
+            pcrValue: '',
+            dmfValue: '',
+            startTime: null
+        };
+
+        let answers = {
+            toothpaste: [],
+            snacks: '',
+            brushing: '',
+            floss: ''
+        };
+
+        let currentQuestion = 0;
+
+        // 質問データ
+        const questions = [
+            { id: 'toothpaste', type: 'checkbox', title: 'お子さんがお使いの歯磨き粉を教えてください', subtitle: '該当するものを選択してください（複数選択可）', options: ['チェックアップジェル（グレープ・ピーチ）', 'チェックアップKodomo（グレープ・ストロベリー・アップル）', 'チェックアップスタンダード', 'ReCal（グレープ・マンゴー）', 'クリンプロ歯みがきペースト F1450', 'オラブリス', '市販のもの'] },
+            { id: 'snacks', type: 'radio', title: 'お子さんのおやつの回数を教えてください', subtitle: '園でのおやつも含めてください。ジュース・野菜ジュース・100%果汁ジュース・スポーツドリンク・乳酸菌飲料・アイスもおやつに含みます。', options: ['1日０回', '1日１回', '1日２回', '1日３回以上'] },
+            { id: 'brushing', type: 'radio', title: '1日の仕上げ磨きの回数を教えてください', subtitle: '', options: ['仕上げ磨きは1日2回以上', '仕上げ磨きは1日1回', '仕上げ磨きは数日おき', '仕上げ磨きはしていない'] },
+            { id: 'floss', type: 'radio', title: 'フロスの使用状況を教えてください', subtitle: '', options: ['フロスも毎日している', 'フロスは週に何回かしている', 'フロスはしていない'] }
+        ];
+
+        // メッセージ表示関数（alertの代替）
+        function showMessage(message) {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // 画面1の初期化
+        function initializeScreen1() {
+            // 担当者ラジオボタンの生成
+            ['須貝', '伊藤', '中川'].forEach(staff => {
+                const label = document.createElement('label');
+                label.className = 'radio-label';
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'staff';
+                input.value = staff;
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(staff));
+                label.addEventListener('click', function() {
+                    document.querySelectorAll('#staffRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
+                    this.classList.add('selected');
+                    patientInfo.staff = staff;
+                    checkScreen1Completion();
+                });
+                staffRadioGroup.appendChild(label);
+            });
+
+            // フッ化物塗布間隔ラジオボタンの生成
+            ['OK', '未達成'].forEach(status => {
+                const label = document.createElement('label');
+                label.className = 'radio-label';
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'fluoride';
+                input.value = status;
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(status));
+                label.addEventListener('click', function() {
+                    document.querySelectorAll('#fluorideRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
+                    this.classList.add('selected');
+                    patientInfo.fluoride = status;
+                    checkScreen1Completion();
+                });
+                fluorideRadioGroup.appendChild(label);
+            });
+
+            patientNumberInput.addEventListener('input', function() {
+                patientInfo.number = this.value;
+                checkScreen1Completion();
+            });
+        }
+
+        // 画面1の入力完了チェック
+        function checkScreen1Completion() {
+            startBtn.disabled = !(patientInfo.staff && patientInfo.number && patientInfo.fluoride);
+        }
+
+        // 問診画面の表示
+        function displayQuestion() {
+            while (questionContainer.firstChild) {
+                questionContainer.removeChild(questionContainer.firstChild);
+            }
+
+            const question = questions[currentQuestion];
+            const title = document.createElement('div');
+            title.className = 'question-title';
+            title.textContent = `質問${currentQuestion + 1}/4: ${question.title}`;
+            questionContainer.appendChild(title);
+
+            if (question.subtitle) {
+                const subtitle = document.createElement('div');
+                subtitle.className = 'question-subtitle';
+                subtitle.textContent = question.subtitle;
+                questionContainer.appendChild(subtitle);
+            }
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'checkbox-group';
+            question.options.forEach(option => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                
+                const input = document.createElement('input');
+                input.type = question.type;
+                input.name = question.id;
+                input.value = option;
+                
+                if (question.type === 'checkbox' && answers[question.id].includes(option)) {
+                    input.checked = true;
+                    label.classList.add('selected');
+                } else if (question.type === 'radio' && answers[question.id] === option) {
+                    input.checked = true;
+                    label.classList.add('selected');
+                }
+                
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(option));
+                
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (e.target === input) return;
+
+                    if (question.type === 'checkbox') {
+                        input.checked = !input.checked;
+                        if (input.checked) {
+                            this.classList.add('selected');
+                            if (!answers[question.id].includes(option)) {
+                                answers[question.id].push(option);
+                            }
+                        } else {
+                            this.classList.remove('selected');
+                            answers[question.id] = answers[question.id].filter(v => v !== option);
+                        }
+                    } else { // type: 'radio'
+                        document.querySelectorAll(`input[name="${question.id}"]`).forEach(i => {
+                            i.checked = false;
+                            if(i.parentElement) i.parentElement.classList.remove('selected');
+                        });
+                        input.checked = true;
+                        this.classList.add('selected');
+                        answers[question.id] = option;
+                    }
+                    checkQuestionCompletion();
+                });
+                optionsContainer.appendChild(label);
+            });
+            questionContainer.appendChild(optionsContainer);
+
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            progressFill.style.width = progress + '%';
+            
+            prevBtn.style.display = currentQuestion === 0 ? 'none' : 'block';
+            nextBtn.textContent = currentQuestion === questions.length - 1 ? '完了' : '次へ →';
+            
+            checkQuestionCompletion();
+        }
+
+        // 問診の回答必須チェック
+        function checkQuestionCompletion() {
+            const question = questions[currentQuestion];
+            if (question.type === 'checkbox') {
+                nextBtn.disabled = answers[question.id].length === 0;
+            } else {
+                nextBtn.disabled = !answers[question.id];
+            }
+        }
+
+        // 結果概要の表示
+        function showResultSummary(element) {
+            while (element.firstChild) {
+                element.removeChild(element.firstChild);
+            }
+
+            let items;
+            if (element === resultSummaryContainer) {
+                items = [
+                    { label: '歯磨き粉', value: answers.toothpaste.join(', ') || '未回答' },
+                    { label: 'おやつの回数', value: answers.snacks || '未回答' },
+                    { label: '仕上げ磨き', value: answers.brushing || '未回答' },
+                    { label: 'フロス使用', value: answers.floss || '未回答' }
+                ];
+            } else {
+                items = [
+                    { label: '担当者', value: patientInfo.staff },
+                    { label: 'カルテ番号', value: patientInfo.number },
+                    { label: 'フッ化物塗布間隔', value: patientInfo.fluoride },
+                    { label: '歯磨き粉', value: answers.toothpaste.join(', ') || '未回答' },
+                    { label: 'おやつの回数', value: answers.snacks || '未回答' },
+                    { label: '仕上げ磨き', value: answers.brushing || '未回答' },
+                    { label: 'フロス使用', value: answers.floss || '未回答' }
+                ];
+            }
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                const label = document.createElement('span');
+                label.className = 'result-label';
+                label.textContent = item.label + ': ';
+                const value = document.createElement('span');
+                value.textContent = item.value;
+                div.appendChild(label);
+                div.appendChild(value);
+                element.appendChild(div);
+            });
+        }
+
+        // 点数計算ロジック
+        function calculateScore() {
+            let totalScore = 0;
+            let scores = {};
+
+            // フッ化物点数
+            if (patientInfo.fluoride === 'OK') {
+                if (answers.toothpaste.includes('市販のもの')) {
+                    scores.fluoride = 2;
+                } else {
+                    scores.fluoride = 0;
+                }
+            } else { // 未達成
+                if (answers.toothpaste.includes('市販のもの')) {
+                    scores.fluoride = 4;
+                } else {
+                    scores.fluoride = 3;
+                }
+            }
+
+            // 飲食回数点数
+            switch (answers.snacks) {
+                case '1日０回': scores.snacks = 0; break;
+                case '1日１回': scores.snacks = 1; break;
+                case '1日２回': scores.snacks = 3; break;
+                case '1日３回以上': scores.snacks = 5; break;
+                default: scores.snacks = 0;
+            }
+
+            // 仕上げ・フロス（PCR値）点数
+            const pcr = parseInt(patientInfo.pcrValue, 10);
+            if (!isNaN(pcr)) {
+                if (pcr <= 15) scores.pcr = 0;
+                else if (pcr >= 16 && pcr <= 30) scores.pcr = 1;
+                else if (pcr >= 31 && pcr <= 50) scores.pcr = 2;
+                else scores.pcr = 3;
+            } else {
+                scores.pcr = 0;
+            }
+
+            // DMF歯数点数
+            const dmf = parseInt(patientInfo.dmfValue, 10);
+            if (!isNaN(dmf)) {
+                if (dmf <= 1) scores.dmf = 0;
+                else if (dmf >= 2 && dmf <= 3) scores.dmf = 1;
+                else scores.dmf = 3;
+            } else {
+                scores.dmf = 0;
+            }
+
+            totalScore = scores.fluoride + scores.snacks + scores.pcr + scores.dmf;
+            return { scores, totalScore };
+        }
+
+        // 記録表プレビューの生成
+        function generatePreview() {
+            while (screen5.firstChild) {
+                screen5.removeChild(screen5.firstChild);
+            }
+
+            const { scores, totalScore } = calculateScore();
+
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'preview-container';
+
+            // 日付と時間
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            const startTime = new Date(patientInfo.startTime);
+            const endTime = new Date(startTime.getTime() + 16 * 60000);
+            const timeStr = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}〜${endTime.getHours()}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+
+            // ヘッダー部分
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'preview-header';
+            
+            const leftHeader = document.createElement('div');
+            leftHeader.className = 'preview-left';
+            const titleRow = document.createElement('div');
+            titleRow.className = 'preview-title-row';
+            const title = document.createElement('div');
+            title.className = 'preview-title';
+            title.textContent = 'キッズ（４才〜６才）';
+            const titleNumber = document.createElement('div');
+            titleNumber.className = 'preview-title-number';
+            titleNumber.textContent = `カルテ番号：${patientInfo.number}`;
+            titleRow.appendChild(title);
+            titleRow.appendChild(titleNumber);
+            const subtitle = document.createElement('div');
+            subtitle.className = 'preview-subtitle';
+            subtitle.textContent = '【今日の内容】';
+            leftHeader.appendChild(titleRow);
+            leftHeader.appendChild(subtitle);
+
+            const rightHeader = document.createElement('div');
+            rightHeader.className = 'preview-right';
+            const dhTitle = document.createElement('div');
+            dhTitle.className = 'dh-record-title';
+            dhTitle.textContent = 'DH業務記録';
+            const dhRecord = document.createElement('div');
+            dhRecord.className = 'dh-record';
+            const dateRow = document.createElement('div');
+            dateRow.className = 'dh-record-row';
+            dateRow.textContent = `日付：${dateStr}　　担当：${patientInfo.staff}`;
+            const timeRow = document.createElement('div');
+            timeRow.className = 'dh-record-row';
+            timeRow.textContent = `指導時間：${timeStr}`;
+            dhRecord.appendChild(dateRow);
+            dhRecord.appendChild(timeRow);
+            rightHeader.appendChild(dhTitle);
+            rightHeader.appendChild(dhRecord);
+            
+            headerDiv.appendChild(leftHeader);
+            headerDiv.appendChild(rightHeader);
+            previewContainer.appendChild(headerDiv);
+
+            // ボックスの幅を左右いっぱいに広げるためのコンテナ
+            const todayContentContainer = document.createElement('div');
+            todayContentContainer.className = 'today-content-container';
+            const todayContentBox = document.createElement('div');
+            todayContentBox.className = 'today-content-box';
+            todayContentBox.textContent = 'フッ素・SC・PMTC・ダイアグ・BW（　　）枚・パノラマ・photo・舌圧・りっぷる・ホームケアチェック・その他（　　　　　　　　）';
+            todayContentContainer.appendChild(todayContentBox);
+            previewContainer.appendChild(todayContentContainer);
+
+            // ❶リスク確認表
+            const riskSection = document.createElement('div');
+            riskSection.className = 'risk-section';
+            const riskTitle = document.createElement('div');
+            riskTitle.className = 'section-title';
+            riskTitle.textContent = '❶リスク確認';
+            riskSection.appendChild(riskTitle);
+
+            const riskTable = document.createElement('table');
+            riskTable.className = 'risk-table';
+            const tr = document.createElement('tr');
+            
+            const createCell = (type, content) => {
+                const cell = document.createElement(type);
+                cell.style.verticalAlign = 'top';
+                if (type === 'th') cell.className = 'row-header';
+                if (typeof content === 'string') {
+                    cell.textContent = content;
+                } else if (content.nodeType) {
+                    content.forEach(node => cell.appendChild(node));
+                } else {
+                    content.forEach(node => cell.appendChild(document.createTextNode(node)));
+                }
+                return cell;
+            };
+
+            // フッ化物欄
+            const fCell = document.createElement('td');
+            fCell.style.width = '25%';
+            fCell.textContent = answers.toothpaste.join('\n');
+            tr.appendChild(createCell('th', 'フッ化物'));
+            tr.appendChild(fCell);
+            
+            // 間食回数欄
+            const snackCell = document.createElement('td');
+            snackCell.style.width = '25%';
+            snackCell.textContent = answers.snacks;
+            tr.appendChild(createCell('th', '間食回数'));
+            tr.appendChild(snackCell);
+
+            // 歯磨き欄
+            const brushingCell = document.createElement('td');
+            brushingCell.style.width = '20%';
+            brushingCell.textContent = answers.brushing;
+            tr.appendChild(createCell('th', '歯磨き'));
+            tr.appendChild(brushingCell);
+
+            // フロス欄
+            const flossCell = document.createElement('td');
+            flossCell.style.width = '20%';
+            flossCell.textContent = answers.floss;
+            tr.appendChild(createCell('th', 'フロス'));
+            tr.appendChild(flossCell);
+            
+            riskTable.appendChild(tr);
+            riskSection.appendChild(riskTable);
+            previewContainer.appendChild(riskSection);
+            
+            // 点数計算表
+            const scoreTable = document.createElement('table');
+            scoreTable.className = 'score-table';
+            
+            const createRow = (header, points, selectedScore) => {
+                const tr = document.createElement('tr');
+                const th = document.createElement('th');
+                th.textContent = header;
+                tr.appendChild(th);
+                points.forEach(p => {
+                    const td = document.createElement('td');
+                    td.textContent = p.label;
+                    if (p.score === selectedScore) {
+                        td.classList.add('red-border');
+                    }
+                    tr.appendChild(td);
+                });
+                return tr;
+            };
+
+            const fPoints = [{label: '両方 / 0', score: 0}, {label: '医院(年3回) / 2', score: 2}, {label: '家庭のみ/ 3', score: 3}, {label: '不使用/ 4', score: 4}];
+            const snacksPoints = [{label: '1日0回 / 0', score: 0}, {label: '1日1回 / 1', score: 1}, {label: '1日2回 / 3', score: 3}, {label: '1日3回以上 / 5', score: 5}];
+            const pcrPoints = [{label: '15%以下/ 0', score: 0}, {label: '16〜30%/ 1', score: 1}, {label: '31〜50%/ 2', score: 2}, {label: '51%以上/ 3', score: 3}];
+            const dmfPoints = [{label: '0〜1本 / 0', score: 0}, {label: '2〜3本 / 1', score: 1}, {label: '4本以上 / 3', score: 3}];
+            
+            scoreTable.appendChild(createRow('フッ化物', fPoints, scores.fluoride));
+            scoreTable.appendChild(createRow('飲食回数', snacksPoints, scores.snacks));
+            scoreTable.appendChild(createRow('仕上げ・フロス', pcrPoints, scores.pcr));
+            scoreTable.appendChild(createRow('DMF歯数', dmfPoints, scores.dmf));
+
+            previewContainer.appendChild(scoreTable);
+            
+            // リスクレベルの表示
+            const riskLevelBox = document.createElement('div');
+            riskLevelBox.className = 'risk-level-box';
+            riskLevelBox.textContent = `
+6点以下：安全域
+7点：注意域
+8〜9点：危険域
+10点以上：非常に危険
+            `.trim();
+            previewContainer.appendChild(riskLevelBox);
+
+            // 合計点
+            const totalScoreDiv = document.createElement('div');
+            totalScoreDiv.className = 'total-score';
+            const strong = document.createElement('strong');
+            strong.textContent = `合計${totalScore}点`;
+            totalScoreDiv.appendChild(strong);
+            previewContainer.appendChild(totalScoreDiv);
+            
+            // ❷口腔内診査・ダイアグ数値記入
+            const diagSection = document.createElement('div');
+            diagSection.className = 'diagnosis-section';
+            const diagTitle = document.createElement('div');
+            diagTitle.className = 'diagnosis-title';
+            diagTitle.textContent = '❷口腔内診査・ダイアグ数値記入';
+            diagSection.appendChild(diagTitle);
+            
+            // 画像部分のレイアウト
+            const oralExamContent = document.createElement('div');
+            oralExamContent.className = 'oral-exam-content';
+            
+            const oralExamDiagram = document.createElement('div');
+            oralExamDiagram.className = 'oral-exam-diagram';
+            const upperTeeth = document.createElement('div');
+            upperTeeth.textContent = '６　Ｅ　Ｄ　Ｃ　Ｂ　Ａ　｜　Ａ　Ｂ　Ｃ　Ｄ　Ｅ　６';
+            const line = document.createElement('div');
+            line.className = 'oral-exam-line';
+            const lowerTeeth = document.createElement('div');
+            lowerTeeth.textContent = '６　Ｅ　Ｄ　Ｃ　Ｂ　Ａ　｜　Ａ　Ｂ　Ｃ　Ｄ　Ｅ　６';
+            oralExamDiagram.appendChild(upperTeeth);
+            oralExamDiagram.appendChild(line);
+            oralExamDiagram.appendChild(lowerTeeth);
+            
+            const oralExamOptions = document.createElement('div');
+            oralExamOptions.className = 'oral-exam-options';
+            const redAndSwelling = document.createElement('div');
+            redAndSwelling.textContent = '発赤・腫脹　　あり　　なし';
+            const calculus = document.createElement('div');
+            calculus.textContent = '歯石　　　　　あり　　なし';
+            const diagStandard = document.createElement('div');
+            diagStandard.innerHTML = '＜乳歯のダイアグ基準＞<br>15未満：健全　15-79：CO経過　80以上：C処置';
+            oralExamOptions.appendChild(redAndSwelling);
+            oralExamOptions.appendChild(calculus);
+            oralExamOptions.appendChild(diagStandard);
+            
+            oralExamContent.appendChild(oralExamDiagram);
+            oralExamContent.appendChild(oralExamOptions);
+            diagSection.appendChild(oralExamContent);
+
+            previewContainer.appendChild(diagSection);
+
+            const funcSection = document.createElement('div');
+            funcSection.className = 'diagnosis-section';
+            const funcTitle = document.createElement('div');
+            funcTitle.className = 'diagnosis-title';
+            funcTitle.textContent = '❸口腔機能検査　　※３ヶ月ごと算定';
+            funcSection.appendChild(funcTitle);
+            
+            // ❸と❹の間に追加する部分
+            const oralFuncContent = document.createElement('div');
+            oralFuncContent.className = 'oral-function-content';
+
+            const oralFuncGrid = document.createElement('div');
+            oralFuncGrid.className = 'oral-function-grid';
+            const lippleBox = document.createElement('div');
+            lippleBox.textContent = 'リップルくん';
+            const emptyBox1 = document.createElement('div');
+            const tonguePressureBox = document.createElement('div');
+            tonguePressureBox.textContent = '舌圧計';
+            const emptyBox2 = document.createElement('div');
+            oralFuncGrid.appendChild(lippleBox);
+            oralFuncGrid.appendChild(emptyBox1);
+            oralFuncGrid.appendChild(tonguePressureBox);
+            oralFuncGrid.appendChild(emptyBox2);
+
+            const oralFuncOptions = document.createElement('div');
+            oralFuncOptions.className = 'oral-function-options';
+            
+            const biteRow = document.createElement('div');
+            biteRow.className = 'oral-function-options-row';
+            biteRow.innerHTML = `
+                【噛み合わせ】
+                開咬型　　　　反対咬合　　　　上顎前突　　　　過蓋咬合<br>
+                その他（　　　　　　　　　　　　　　　　　　　　　　　　）
+            `;
+
+            const habitRow = document.createElement('div');
+            habitRow.className = 'oral-function-options-row';
+            habitRow.innerHTML = `
+                【習癖】<br>
+                お口ぽかん　　　　　　　　　　指しゃぶり<br>
+                咬唇癖　　　　　　　　　　　　何かを噛む・吸う<br>
+                爪噛み　　　　　　　　　　　　その他（　　　　　　　　　　）<br>
+                舌癖
+            `;
+
+            oralFuncOptions.appendChild(biteRow);
+            oralFuncOptions.appendChild(habitRow);
+            
+            oralFuncContent.appendChild(oralFuncGrid);
+            oralFuncContent.appendChild(oralFuncOptions);
+            funcSection.appendChild(oralFuncContent);
+            
+            previewContainer.appendChild(funcSection);
+
+            const treatSection = document.createElement('div');
+            treatSection.className = 'treatment-plan';
+            const treatTitle = document.createElement('div');
+            treatTitle.className = 'diagnosis-title';
+            treatTitle.textContent = '❹治療計画';
+            treatSection.appendChild(treatTitle);
+            previewContainer.appendChild(treatSection);
+
+            const salesSection = document.createElement('div');
+            salesSection.className = 'checklist-section';
+            const salesTitle = document.createElement('div');
+            salesTitle.className = 'checklist-title';
+            salesTitle.textContent = '❺物販物の確認';
+            salesSection.appendChild(salesTitle);
+            
+            // ❺と❻の間に追加する部分
+            const salesContent = document.createElement('div');
+            salesContent.className = 'checklist-content';
+            
+            const column1 = document.createElement('div');
+            column1.className = 'checklist-item-col';
+            const items1 = [
+                'マミー×＿＿＿本',
+                'タフト１７×＿＿＿本',
+                'タフト２０×＿＿＿本',
+                'ウルトラフロスS×＿＿＿箱',
+                'チェックアップジェル　グレープ・ピーチ・チャイルドケアパイン',
+                'チェックアップKodomo　グレープ・ストロベリー・アップル'
+            ];
+            items1.forEach(text => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+                const checkbox = document.createElement('span');
+                checkbox.className = 'checkbox-square';
+                item.appendChild(checkbox);
+                item.appendChild(document.createTextNode(text));
+                column1.appendChild(item);
+            });
+            salesContent.appendChild(column1);
+
+            const column2 = document.createElement('div');
+            column2.className = 'checklist-item-col';
+            const items2 = [
+                'チェックアップスタンダート',
+                'クリンプロ',
+                'リカル　ブドウ・マンゴー',
+                'オラブリス　スタートセット・粉・ボトル',
+                'キシリトール　タブレット＿＿袋・チョコ×＿＿袋',
+                'その他（　　　　　　　　　　　　　）'
+            ];
+            items2.forEach(text => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+                const checkbox = document.createElement('span');
+                checkbox.className = 'checkbox-square';
+                item.appendChild(checkbox);
+                item.appendChild(document.createTextNode(text));
+                column2.appendChild(item);
+            });
+            salesContent.appendChild(column2);
+
+            salesSection.appendChild(salesContent);
+            previewContainer.appendChild(salesSection);
+
+            const memoSection = document.createElement('div');
+            memoSection.className = 'memo-section';
+            const memoTitle = document.createElement('div');
+            memoTitle.className = 'memo-title';
+            memoTitle.textContent = '❻メモ';
+            memoSection.appendChild(memoTitle);
+            previewContainer.appendChild(memoSection);
+            
+            screen5.appendChild(previewContainer);
+        }
+        
+        // 画面遷移ロジック
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            if (screen) screen.classList.add('active');
+        }
+
+        // イベントリスナー
+        startBtn.addEventListener('click', function() {
+            patientInfo.startTime = new Date();
+            showScreen(screen2);
+            displayQuestion();
+        });
+
+        prevBtn.addEventListener('click', function() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                displayQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', function() {
+            if (nextBtn.disabled) {
+                return;
+            }
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                displayQuestion();
+            } else {
+                showScreen(screen3);
+                showResultSummary(resultSummaryContainer);
+            }
+        });
+
+        backToQ4Btn.addEventListener('click', function() {
+            currentQuestion = 3;
+            showScreen(screen2);
+            displayQuestion();
+        });
+
+        staffBtn.addEventListener('click', function() {
+            showScreen(screen4);
+            showResultSummary(staffResultSummaryContainer);
+        });
+
+        backToThankYouBtn.addEventListener('click', function() {
+            showScreen(screen3);
+        });
+
+        generateBtn.addEventListener('click', function() {
+            patientInfo.pcrValue = pcrValueInput.value;
+            patientInfo.dmfValue = dmfValueInput.value;
+            
+            if (patientInfo.pcrValue === '' || patientInfo.dmfValue === '') {
+                showMessage('PCR値とDMF歯数を入力してください');
+            } else {
+                generatePreview();
+                showScreen(screen5);
+            }
+        });
+
+        // 初期化
+        initializeScreen1();
+    </script>
+</body>
+</html>
