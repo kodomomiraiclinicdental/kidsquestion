@@ -1025,7 +1025,7 @@
             questionContainer.appendChild(optionsContainer);
 
             progressFill.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
-            prevBtn.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+            prevBtn.style.visibility = currentQuestion === 0 ? 'hidden' : 'visible';
             nextBtn.textContent = currentQuestion === questions.length - 1 ? '完了' : '次へ →';
             
             checkQuestionCompletion();
@@ -1101,7 +1101,18 @@
             screens.screen5.innerHTML = '';
 
             const { scores, totalScore } = calculateScore();
-// ... existing code ... -->
+            const today = patientInfo.startTime;
+            const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            const endTime = new Date(today.getTime() + 16 * 60000);
+            const timeStr = `${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}〜${endTime.getHours()}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+            
+            const createRow = (header, points, selectedScore) => {
+                const tds = points.map(p => `<td class="${p.score === selectedScore ? 'red-border' : ''}">${p.label}</td>`).join('');
+                return `<tr><th>${header}</th>${tds}</tr>`;
+            };
+
+            const fPoints = [{label: '両方 / 0', score: 0}, {label: '医院(年3回) / 2', score: 2}, {label: '家庭のみ/ 3', score: 3}, {label: '不使用/ 4', score: 4}];
+            const snacksPoints = [{label: '1日0回 / 0', score: 0}, {label: '1日1回 / 1', score: 1}, {label: '1日2回 / 3', score: 3}, {label: '1日3回以上 / 5', score: 5}];
             const pcrPoints = [{label: '15%以下/ 0', score: 0}, {label: '16〜30%/ 1', score: 1}, {label: '31〜50%/ 2', score: 2}, {label: '51%以上/ 3', score: 3}];
             const dmfPoints = [{label: '0〜1本 / 0', score: 0}, {label: '2〜3本 / 1', score: 1}, {label: '4本以上 / 3', score: 3}];
 
@@ -1328,6 +1339,13 @@
             if (patientInfo.pcrValue === '' || patientInfo.dmfValue === '') {
                 showMessage('PCR値とDMF歯数を入力してください');
             } else {
+                // GitHub Pagesでページがリロードされた場合など、startTimeが失われることがあるため、
+                // 存在しない場合は現在時刻で設定する
+                if (!patientInfo.startTime) {
+                    console.warn("patientInfo.startTime was not set. Falling back to new Date().");
+                    patientInfo.startTime = new Date();
+                }
+
                 generatePreview();
                 showScreen(screens.screen5);
                 saveToFirestore();
