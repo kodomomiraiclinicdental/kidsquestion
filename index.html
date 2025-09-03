@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>こどもみらいクリニックデンタル - みらいく予防プログラム</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -70,6 +71,12 @@
             color: #333;
             font-weight: 600;
         }
+        
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
 
         .radio-group {
             display: flex;
@@ -77,7 +84,7 @@
             flex-wrap: wrap;
         }
 
-        .radio-label {
+        .radio-label, .check-label {
             display: flex;
             align-items: center;
             padding: 15px 25px;
@@ -89,12 +96,12 @@
             font-size: 16px;
         }
 
-        .radio-label:hover {
+        .radio-label:hover, .check-label:hover {
             background: #e9ecef;
             transform: translateY(-2px);
         }
 
-        .radio-label.selected {
+        .radio-label.selected, .check-label.selected {
             background: #667eea;
             color: white;
             border-color: #667eea;
@@ -202,7 +209,8 @@
         }
 
         .checkbox-label input[type="checkbox"],
-        .checkbox-label input[type="radio"] {
+        .checkbox-label input[type="radio"],
+        .check-label input[type="checkbox"] {
             appearance: none;
             -webkit-appearance: none;
             width: 22px;
@@ -216,12 +224,14 @@
             transition: all 0.3s ease;
         }
 
-        .checkbox-label input[type="checkbox"] {
+        .checkbox-label input[type="checkbox"],
+        .check-label input[type="checkbox"] {
             border-radius: 6px;
         }
 
         .checkbox-label input[type="radio"]:checked,
-        .checkbox-label input[type="checkbox"]:checked {
+        .checkbox-label input[type="checkbox"]:checked,
+        .check-label input[type="checkbox"]:checked {
             background: #667eea;
             border-color: #667eea;
         }
@@ -238,7 +248,8 @@
             transform: translate(-50%, -50%);
         }
 
-        .checkbox-label input[type="checkbox"]:checked::after {
+        .checkbox-label input[type="checkbox"]:checked::after,
+        .check-label input[type="checkbox"]:checked::after {
             content: '✓';
             position: absolute;
             color: white;
@@ -249,24 +260,28 @@
             transform: translate(-50%, -50%);
         }
 
-        .checkbox-label.selected {
+        .checkbox-label.selected,
+        .check-label.selected {
             background: #667eea;
             color: white;
             border-color: #667eea;
         }
 
         .checkbox-label.selected input[type="checkbox"],
-        .checkbox-label.selected input[type="radio"] {
+        .checkbox-label.selected input[type="radio"],
+        .check-label.selected input[type="checkbox"] {
             border-color: white;
         }
 
         .checkbox-label.selected input[type="checkbox"]:checked,
-        .checkbox-label.selected input[type="radio"]:checked {
+        .checkbox-label.selected input[type="radio"]:checked,
+        .check-label.selected input[type="checkbox"]:checked {
             background: white;
             border-color: white;
         }
 
-        .checkbox-label.selected input[type="checkbox"]:checked::after {
+        .checkbox-label.selected input[type="checkbox"]:checked::after,
+        .check-label.selected input[type="checkbox"]:checked::after {
             color: #667eea;
         }
 
@@ -282,7 +297,7 @@
         
         .navigation-end {
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             margin-top: 40px;
         }
 
@@ -369,14 +384,6 @@
 
         .today-content-box.enlarged-font {
             font-size: 16px;
-        }
-
-        .risk-section .section-title {
-            background: #000;
-            color: white;
-            padding: 4px 8px;
-            display: inline-block;
-            margin-bottom: 0;
         }
 
         .risk-table {
@@ -677,10 +684,10 @@
         <div id="screen0" class="screen active">
             <div class="header">
                 <h1>こどもみらいクリニックデンタル</h1>
-                <h2>みらいく予防プログラム〜Kids〜</h2>
+                <h2>みらいく予防プログラム</h2>
             </div>
             <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 50px;">
-                <button class="btn" id="startKidsBtn">Kids問診</button>
+                <button class="btn" id="startKidsBtn">Kids</button>
                 <button class="btn" id="viewDataBtn">データ閲覧</button>
             </div>
         </div>
@@ -689,7 +696,7 @@
         <div id="screen1" class="screen">
             <div class="header">
                 <h1>こどもみらいクリニックデンタル</h1>
-                <h2>みらいく予防プログラム〜Kids〜</h2>
+                <h2>みらいくKidsプログラム</h2>
             </div>
             
             <div class="form-group">
@@ -708,8 +715,8 @@
             </div>
             
             <div class="navigation-end" style="gap: 10px;">
-                <button class="btn btn-secondary" id="backToStartFromS1Btn">TOP</button>
                 <button class="btn" id="startBtn" disabled>問診を開始する</button>
+                <button class="btn btn-secondary" id="backToStartFromS1Btn">TOP</button>
             </div>
         </div>
 
@@ -731,6 +738,7 @@
         <div id="screen3" class="screen">
             <div class="header">
                 <h1>ご回答ありがとうございました</h1>
+                <p style="font-size: 28px; color: #667eea; margin-top: 20px;">タブレットをスタッフにお渡しください</p>
             </div>
             
             <div class="result-summary" id="resultSummary"></div>
@@ -748,17 +756,34 @@
             </div>
             
             <div class="result-summary" id="staffResultSummary"></div>
-            
+
+            <div class="form-group">
+                <label>本日の内容</label>
+                <div class="checkbox-grid" id="proceduresGroup">
+                    <!-- Checkboxes will be generated by JavaScript -->
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="pcrValue">PCR値（%）</label>
-                <input type="number" id="pcrValue" placeholder="PCR値を入力">
+                <input type="number" id="pcrValue" placeholder="PCR値を入力" step="0.1">
             </div>
-            
+
             <div class="form-group">
                 <label for="dmfValue">DMF歯数</label>
                 <select id="dmfValue">
                     <!-- Options will be generated by JavaScript -->
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tonguePressureValue">舌圧（N)</label>
+                <input type="number" id="tonguePressureValue" placeholder="舌圧を入力" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label for="lipClosureForceValue">口唇閉鎖力（N)</label>
+                <input type="number" id="lipClosureForceValue" placeholder="口唇閉鎖力を入力" step="0.1">
             </div>
             
             <div class="navigation">
@@ -777,6 +802,9 @@
                 <input type="text" id="searchNumber" placeholder="カルテ番号を入力してください">
                 <button class="btn" id="searchBtn" style="margin-top: 10px;">検索</button>
             </div>
+            <div id="graphBtnContainer" style="margin-top: 20px; text-align: center; display: none;">
+                <button class="btn" id="viewGraphBtn">PCR値の推移グラフを表示</button>
+            </div>
             <div id="resultsList" style="margin-top: 20px;"></div>
             <div class="navigation">
                 <button class="btn btn-secondary" id="backToStartBtn">← 戻る</button>
@@ -785,6 +813,20 @@
 
         <!-- Screen 5: Preview -->
         <div id="screen5" class="screen">
+        </div>
+
+        <!-- Screen 7: PCR Graph -->
+        <div id="screen7" class="screen">
+            <div class="header">
+                <h1>PCR値 推移グラフ</h1>
+                <h2 id="graphPatientNumber"></h2>
+            </div>
+            <div style="width: 100%; max-width: 700px; margin: 0 auto;">
+                <canvas id="pcrChart"></canvas>
+            </div>
+            <div class="navigation">
+                <button class="btn btn-secondary" id="backToResultsBtn">← 戻る</button>
+            </div>
         </div>
     </div>
     
@@ -819,6 +861,7 @@
             screen4: document.getElementById('screen4'),
             screen5: document.getElementById('screen5'),
             screen6: document.getElementById('screen6'),
+            screen7: document.getElementById('screen7'),
         };
 
         const startKidsBtn = document.getElementById('startKidsBtn');
@@ -840,8 +883,11 @@
         const staffBtn = document.getElementById('staffBtn');
 
         const staffResultSummaryContainer = document.getElementById('staffResultSummary');
+        const proceduresGroup = document.getElementById('proceduresGroup');
         const pcrValueInput = document.getElementById('pcrValue');
         const dmfValueSelect = document.getElementById('dmfValue');
+        const tonguePressureValueInput = document.getElementById('tonguePressureValue');
+        const lipClosureForceValueInput = document.getElementById('lipClosureForceValue');
         const backToThankYouBtn = document.getElementById('backToThankYouBtn');
         const generateBtn = document.getElementById('generateBtn');
 
@@ -850,11 +896,18 @@
         const resultsList = document.getElementById('resultsList');
         const backToStartBtn = document.getElementById('backToStartBtn');
         
+        const graphBtnContainer = document.getElementById('graphBtnContainer');
+        const viewGraphBtn = document.getElementById('viewGraphBtn');
+        const backToResultsBtn = document.getElementById('backToResultsBtn');
+        const graphPatientNumber = document.getElementById('graphPatientNumber');
+
         const messageBox = document.getElementById('messageBox');
         
         let patientInfo = {};
         let answers = {};
         let currentQuestion = 0;
+        let currentPatientRecords = [];
+        let pcrChartInstance = null;
 
         const initialPatientInfo = {
             staff: '',
@@ -862,6 +915,9 @@
             fluoride: '',
             pcrValue: '',
             dmfValue: '',
+            tonguePressure: '',
+            lipClosureForce: '',
+            procedures: [],
             startTime: null
         };
 
@@ -869,15 +925,46 @@
             toothpaste: [],
             snacks: '',
             brushing: '',
-            floss: ''
+            floss: '',
+            oralCareGoods: []
         };
 
         // 質問データ
         const questions = [
-            { id: 'toothpaste', type: 'checkbox', title: 'お子さんがお使いの歯磨き粉を教えてください', subtitle: '該当するものを選択してください（複数選択可）', options: ['チェックアップジェル（グレープ・ピーチ）', 'チェックアップKodomo（グレープ・ストロベリー・アップル）', 'チェックアップスタンダード', 'ReCal（グレープ・マンゴー）', 'クリンプロ歯みがきペースト F1450', 'オラブリス', '市販のもの'] },
+            { id: 'toothpaste', type: 'checkbox', title: 'お子さんがお使いの歯磨き粉を教えてください', subtitle: '該当するものを選択してください（複数選択可）', options: ['チェックアップジェル（グレープ・ピーチ）', 'チャイルドケア（パイン）', 'チェックアップKodomo（グレープ・ストロベリー・アップル）', 'チェックアップスタンダード', 'ReCal（グレープ・マンゴー）', 'クリンプロ歯みがきペースト F1450', 'オラブリス', '市販のもの'] },
             { id: 'snacks', type: 'radio', title: 'お子さんのおやつの回数を教えてください', subtitle: '園でのおやつも含めてください。ジュース・野菜ジュース・100%果汁ジュース・スポーツドリンク・乳酸菌飲料・アイスもおやつに含みます。', options: ['1日０回', '1日１回', '1日２回', '1日３回以上'] },
             { id: 'brushing', type: 'radio', title: '1日の仕上げ磨きの回数を教えてください', subtitle: '', options: ['仕上げ磨きは1日2回以上', '仕上げ磨きは1日1回', '仕上げ磨きは数日おき', '仕上げ磨きはしていない'] },
-            { id: 'floss', type: 'radio', title: 'フロスの使用状況を教えてください', subtitle: '', options: ['フロスも毎日している', 'フロスは週に何回かしている', 'フロスはしていない'] }
+            { id: 'floss', type: 'radio', title: 'フロスの使用状況を教えてください', subtitle: '', options: ['フロスも毎日している', 'フロスは週に何回かしている', 'フロスはしていない'] },
+            { 
+                id: 'oralCareGoods', 
+                type: 'checkbox', 
+                title: '本日お買い求めになられるオーラルケアグッズがあればご入力ください', 
+                subtitle: '（複数選択可）', 
+                options: [
+                    'なし',
+                    '本日の状態に合わせて選んでほしい',
+                    '＜歯ブラシ＞',
+                    'マミー（仕上げ用歯ブラシ）： ¥130',
+                    'タフト１７（自分磨き用歯ブラシ・1~7歳）：¥130',
+                    'タフト２０やわらかめ（自分磨き用歯ブラシ・6~12歳）：¥130',
+                    'タフト２０（自分磨き用歯ブラシ・6~12歳）：¥130',
+                    '＜フロス＞',
+                    'ウルトラフロスS',
+                    '＜歯磨き剤＞',
+                    'チェックアップジェル（グレープ・ピーチ）',
+                    'チャイルドケア　パイン',
+                    'チェックアップKodomo（グレープ・ストロベリー・アップル）',
+                    'チェックアップスタンダート：¥660',
+                    'クリンプロ歯磨きペーストF1450：¥1,650',
+                    'ReCal Premium（グレープ）：¥780',
+                    'ReCal（マンゴー）：¥660',
+                    '＜フッ素うがい＞',
+                    'オラブリス（スタートセット・粉・ボトル）',
+                    '＜キシリトール＞',
+                    'しまじろうキシリトールタブレット',
+                    'キシリトールチョコ'
+                ] 
+            }
         ];
 
         // メッセージ表示関数
@@ -889,6 +976,12 @@
             }, 3000);
         }
 
+        function zenkakuToHankaku(str) {
+            return str.replace(/[０-９．]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+        }
+
         function resetState() {
             patientInfo = { ...initialPatientInfo };
             answers = JSON.parse(JSON.stringify(initialAnswers)); // Deep copy for arrays
@@ -896,8 +989,12 @@
             // Clear inputs
             patientNumberInput.value = '';
             pcrValueInput.value = '';
+            tonguePressureValueInput.value = '';
+            lipClosureForceValueInput.value = '';
             document.querySelectorAll('#staffRadioGroup .radio-label, #fluorideRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
             document.querySelectorAll('#staffRadioGroup input, #fluorideRadioGroup input').forEach(i => i.checked = false);
+            document.querySelectorAll('#proceduresGroup input').forEach(i => i.checked = false);
+            document.querySelectorAll('#proceduresGroup .check-label').forEach(l => l.classList.remove('selected'));
             checkScreen1Completion();
         }
 
@@ -940,10 +1037,23 @@
                 label.appendChild(document.createTextNode(status));
                 fluorideRadioGroup.appendChild(label);
             });
+        }
 
-            patientNumberInput.addEventListener('input', function() {
-                patientInfo.number = this.value;
-                checkScreen1Completion();
+        function initializeProceduresCheckboxes() {
+            const procedures = ['フッ素', 'SC', 'PMTC', 'ダイアグ', 'BW', 'パノラマ', 'photo', '舌圧', 'りっぷる', 'ホームケアチェック', 'その他'];
+            procedures.forEach(proc => {
+                const label = document.createElement('label');
+                label.className = 'check-label';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'procedure';
+                input.value = proc;
+                input.addEventListener('change', () => {
+                    label.classList.toggle('selected', input.checked);
+                });
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(proc));
+                proceduresGroup.appendChild(label);
             });
         }
         
@@ -972,7 +1082,7 @@
             const question = questions[currentQuestion];
             const title = document.createElement('div');
             title.className = 'question-title';
-            title.textContent = `質問${currentQuestion + 1}/${questions.length}: ${question.title}`;
+            title.textContent = question.title;
             questionContainer.appendChild(title);
 
             if (question.subtitle) {
@@ -985,7 +1095,20 @@
             const optionsContainer = document.createElement('div');
             optionsContainer.className = 'checkbox-group';
             
+            const exclusiveOptions = ['なし', '本日の状態に合わせて選んでほしい'];
+
             question.options.forEach(option => {
+                if (option.startsWith('＜')) {
+                    const header = document.createElement('div');
+                    header.textContent = option;
+                    header.style.fontWeight = 'bold';
+                    header.style.marginTop = '15px';
+                    header.style.color = '#333';
+                    header.style.paddingLeft = '25px';
+                    optionsContainer.appendChild(header);
+                    return; 
+                }
+
                 const label = document.createElement('label');
                 label.className = 'checkbox-label';
                 
@@ -1006,14 +1129,28 @@
                             radio.parentElement.classList.toggle('selected', radio.checked);
                         });
                     } else { // checkbox
+                        const value = input.value;
+                        const isExclusive = exclusiveOptions.includes(value);
+
                         if (input.checked) {
-                            if (!answers[question.id].includes(input.value)) {
-                                answers[question.id].push(input.value);
+                            if (isExclusive) {
+                                answers[question.id] = [value];
+                            } else {
+                                if (!answers[question.id].includes(value)) {
+                                    answers[question.id].push(value);
+                                }
+                                answers[question.id] = answers[question.id].filter(v => !exclusiveOptions.includes(v));
                             }
                         } else {
-                            answers[question.id] = answers[question.id].filter(v => v !== input.value);
+                            answers[question.id] = answers[question.id].filter(v => v !== value);
                         }
-                        label.classList.toggle('selected', input.checked);
+
+                        // Update UI for all checkboxes based on the final `answers` array
+                        document.querySelectorAll(`input[name="${question.id}"]`).forEach(cb => {
+                            const shouldBeChecked = answers[question.id].includes(cb.value);
+                            cb.checked = shouldBeChecked;
+                            cb.parentElement.classList.toggle('selected', shouldBeChecked);
+                        });
                     }
                     checkQuestionCompletion();
                 });
@@ -1046,7 +1183,8 @@
                 { label: '歯磨き粉', value: answers.toothpaste.join(', ') || '未回答' },
                 { label: 'おやつの回数', value: answers.snacks || '未回答' },
                 { label: '仕上げ磨き', value: answers.brushing || '未回答' },
-                { label: 'フロス使用', value: answers.floss || '未回答' }
+                { label: 'フロス使用', value: answers.floss || '未回答' },
+                { label: 'ご希望のオーラルケアグッズ', value: answers.oralCareGoods.join(', ') || '未回答' }
             ];
 
             const itemsToShow = (element === resultSummaryContainer) ? summaryData.slice(3) : summaryData;
@@ -1115,6 +1253,25 @@
             const snacksPoints = [{label: '1日0回 / 0', score: 0}, {label: '1日1回 / 1', score: 1}, {label: '1日2回 / 3', score: 3}, {label: '1日3回以上 / 5', score: 5}];
             const pcrPoints = [{label: '15%以下/ 0', score: 0}, {label: '16〜30%/ 1', score: 1}, {label: '31〜50%/ 2', score: 2}, {label: '51%以上/ 3', score: 3}];
             const dmfPoints = [{label: '0〜1本 / 0', score: 0}, {label: '2〜3本 / 1', score: 1}, {label: '4本以上 / 3', score: 3}];
+            
+            const getRiskLevelHTML = (score) => {
+                const levels = [
+                    { text: '6点以下：安全域', condition: score <= 6 },
+                    { text: '7点：注意域', condition: score === 7 },
+                    { text: '8〜9点：危険域', condition: score >= 8 && score <= 9 },
+                    { text: '10点以上：非常に危険', condition: score >= 10 }
+                ];
+                return levels.map(level => {
+                    const style = level.condition ? 'style="font-weight: bold; color: red;"' : '';
+                    return `<div ${style}>${level.text}</div>`;
+                }).join('');
+            };
+
+            const riskLevelHTML = getRiskLevelHTML(totalScore);
+
+            const proceduresText = (patientInfo.procedures && patientInfo.procedures.length > 0) 
+                                 ? patientInfo.procedures.join('・') 
+                                 : '記載なし';
 
             // This long HTML string is for maintainability of the complex layout.
             const previewHTML = `
@@ -1132,10 +1289,10 @@
                         </div>
                     </div>
                     <div class="today-content-container">
-                        <div class="today-content-box enlarged-font">【今日の内容】フッ素・SC・PMTC・ダイアグ・BW（　　）枚・パノラマ・photo・舌圧・りっぷる・ホームケアチェック・その他（　　　　　　　　）</div>
+                        <div class="today-content-box enlarged-font">【今日の内容】${proceduresText}</div>
                     </div>
                     <div class="risk-section">
-                        <div class="section-title">❶リスク確認</div>
+                        <div class="diagnosis-title">❶リスク確認</div>
                         <table class="risk-table">
                             <tr>
                                 <th>フッ化物</th><td style="width: 25%; white-space: pre-wrap;">${answers.toothpaste.join('\n')}</td>
@@ -1154,7 +1311,7 @@
                         </table>
                         <div class="risk-and-total-wrapper">
                             <div class="risk-level-box">
-                                <div>6点以下：安全域</div><div>7点：注意域</div><div>8〜9点：危険域</div><div>10点以上：非常に危険</div>
+                                ${riskLevelHTML}
                             </div>
                             <div class="total-score"><strong>合計${totalScore}点</strong></div>
                         </div>
@@ -1179,7 +1336,10 @@
                         <div class="diagnosis-title">❸口腔機能検査　　※３ヶ月ごと算定</div>
                         <div class="oral-function-content">
                             <div class="oral-function-grid">
-                                <div>リップルくん</div><div></div><div>舌圧計</div><div></div>
+                                <div>口唇閉鎖力</div>
+                                <div>${patientInfo.lipClosureForce || ''}</div>
+                                <div>舌圧</div>
+                                <div>${patientInfo.tonguePressure || ''}</div>
                             </div>
                             <div class="oral-function-options">
                                 <div>【噛み合わせ】 開咬型　　　　反対咬合　　　　上顎前突　　　　過蓋咬合<br>その他（　　　　　　　　　　　　　　　　　　　　　　　　）</div>
@@ -1189,7 +1349,13 @@
                     </div>
                     <div class="treatment-plan"><div class="diagnosis-title">❹治療計画</div></div>
                     <div class="checklist-section">
-                        <div class="checklist-title">❺物販物の確認</div>
+                        <div class="checklist-title">❺ご希望のオーラルケアグッズ</div>
+                        <div style="padding-left: 10px;">
+                            ${answers.oralCareGoods.length > 0 ? answers.oralCareGoods.map(item => `<div>- ${item}</div>`).join('') : '<div>なし</div>'}
+                        </div>
+                    </div>
+                    <div class="checklist-section">
+                        <div class="checklist-title">❻物販物の確認</div>
                         <div class="checklist-content">
                             <div class="checklist-item-col">
                                 <div class="checklist-item"><span class="checkbox-square"></span>マミー×＿＿＿本</div>
@@ -1209,11 +1375,79 @@
                             </div>
                         </div>
                     </div>
-                    <div class="memo-section"><div class="diagnosis-title">❻メモ</div></div>
+                    <div class="memo-section"><div class="diagnosis-title">❼メモ</div></div>
                 </div>`;
             screens.screen5.innerHTML = previewHTML;
         }
         
+        function displayPcrGraph() {
+            // グラフ表示のために時系列（古い順）に並べ替え
+            const records = [...currentPatientRecords].reverse();
+
+            const labels = records.map(record => {
+                const date = record.timestamp.toDate();
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            });
+
+            const data = records.map(record => {
+                const pcr = parseInt(record.patientInfo.pcrValue, 10);
+                return isNaN(pcr) ? null : pcr;
+            });
+
+            const ctx = document.getElementById('pcrChart').getContext('2d');
+            
+            // 既存のグラフがあれば破棄する
+            if (pcrChartInstance) {
+                pcrChartInstance.destroy();
+            }
+
+            pcrChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'PCR値 (%)',
+                        data: data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        spanGaps: true // nullデータがあっても線をつなぐ
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'パーセント'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日付'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `PCR値: ${context.parsed.y} %`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            showScreen(screens.screen7);
+        }
+
         async function saveToFirestore() {
             try {
                 await addDoc(collection(db, "kids-records"), {
@@ -1235,6 +1469,10 @@
                 return;
             }
 
+            graphBtnContainer.style.display = 'none';
+            resultsList.innerHTML = '';
+            currentPatientRecords = [];
+
             const q = query(collection(db, "kids-records"), 
                             where("patientInfo.number", "==", patientNumber),
                             orderBy("timestamp", "desc"));
@@ -1251,20 +1489,29 @@
                 }
                 
                 querySnapshot.forEach((doc) => {
-                    const record = doc.data();
+                    currentPatientRecords.push(doc.data());
+                });
+
+                if(currentPatientRecords.length > 0) {
+                    graphBtnContainer.style.display = 'block';
+                    graphPatientNumber.textContent = `カルテ番号: ${patientNumber}`;
+                }
+
+                currentPatientRecords.forEach((record) => {
                     const date = record.timestamp.toDate();
                     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                     
                     const button = document.createElement('button');
                     button.className = 'btn btn-secondary';
                     button.style.marginBottom = '10px';
-                    button.textContent = `閲覧: ${dateStr}`;
+                    button.textContent = dateStr;
                     button.addEventListener('click', () => {
                         updatePreviewFromRecord(record);
                         showScreen(screens.screen5);
                     });
                     resultsList.appendChild(button);
                 });
+
             } catch (e) {
                 console.error("Error getting documents: ", e);
                 resultsList.textContent = 'データの取得に失敗しました。';
@@ -1285,6 +1532,7 @@
         viewDataBtn.addEventListener('click', () => {
             searchNumberInput.value = '';
             resultsList.innerHTML = '';
+            graphBtnContainer.style.display = 'none';
             showScreen(screens.screen6);
         });
         
@@ -1327,6 +1575,14 @@
             initializeDmfSelect();
             pcrValueInput.value = patientInfo.pcrValue || '';
             dmfValueSelect.value = patientInfo.dmfValue || '';
+            tonguePressureValueInput.value = patientInfo.tonguePressure || '';
+            lipClosureForceValueInput.value = patientInfo.lipClosureForce || '';
+            
+            document.querySelectorAll('#proceduresGroup input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = patientInfo.procedures.includes(checkbox.value);
+                checkbox.parentElement.classList.toggle('selected', checkbox.checked);
+            });
+
             showResultSummary(staffResultSummaryContainer);
         });
 
@@ -1335,12 +1591,17 @@
         generateBtn.addEventListener('click', () => {
             patientInfo.pcrValue = pcrValueInput.value;
             patientInfo.dmfValue = dmfValueSelect.value;
+            patientInfo.tonguePressure = tonguePressureValueInput.value;
+            patientInfo.lipClosureForce = lipClosureForceValueInput.value;
+
+            patientInfo.procedures = [];
+            document.querySelectorAll('#proceduresGroup input[type="checkbox"]:checked').forEach(checkbox => {
+                patientInfo.procedures.push(checkbox.value);
+            });
             
             if (patientInfo.pcrValue === '' || patientInfo.dmfValue === '') {
                 showMessage('PCR値とDMF歯数を入力してください');
             } else {
-                // GitHub Pagesでページがリロードされた場合など、startTimeが失われることがあるため、
-                // 存在しない場合は現在時刻で設定する
                 if (!patientInfo.startTime) {
                     console.warn("patientInfo.startTime was not set. Falling back to new Date().");
                     patientInfo.startTime = new Date();
@@ -1352,7 +1613,6 @@
             }
         });
         
-        // Event delegation for dynamically created buttons in screen5
         document.addEventListener('click', (e) => {
             const target = e.target;
             if (target.id === 'backToStartFromS5Btn') {
@@ -1361,13 +1621,43 @@
         });
 
         searchBtn.addEventListener('click', () => {
-            loadRecords(searchNumberInput.value.trim());
+            const searchValue = searchNumberInput.value.trim();
+            loadRecords(searchValue);
         });
+
+        viewGraphBtn.addEventListener('click', displayPcrGraph);
+        backToResultsBtn.addEventListener('click', () => showScreen(screens.screen6));
+        
+        function handleNumericInput(event) {
+            const input = event.target;
+            const cursorPosition = input.selectionStart;
+            const originalValue = input.value;
+            const newValue = zenkakuToHankaku(originalValue);
+
+            if (originalValue !== newValue) {
+                input.value = newValue;
+                // カーソル位置を復元
+                if(cursorPosition !== null) {
+                    input.setSelectionRange(cursorPosition, cursorPosition);
+                }
+            }
+        }
+        
+        patientNumberInput.addEventListener('input', (e) => {
+            handleNumericInput(e);
+            patientInfo.number = e.target.value;
+            checkScreen1Completion();
+        });
+        searchNumberInput.addEventListener('input', handleNumericInput);
+        pcrValueInput.addEventListener('input', handleNumericInput);
+        tonguePressureValueInput.addEventListener('input', handleNumericInput);
+        lipClosureForceValueInput.addEventListener('input', handleNumericInput);
+
 
         // --- Initialization ---
         initializeScreen1();
+        initializeProceduresCheckboxes();
     </script>
 </body>
 </html>
-
 
