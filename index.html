@@ -949,20 +949,21 @@
                     'タフト２０やわらかめ（自分磨き用歯ブラシ・6~12歳）：¥130',
                     'タフト２０（自分磨き用歯ブラシ・6~12歳）：¥130',
                     '＜フロス＞',
-                    'ウルトラフロスS',
+                    'ウルトラフロスS：¥540',
                     '＜歯磨き剤＞',
-                    'チェックアップジェル（グレープ・ピーチ）',
-                    'チャイルドケア　パイン',
-                    'チェックアップKodomo（グレープ・ストロベリー・アップル）',
+                    'チェックアップジェル（グレープ・ピーチ）：¥660',
+                    'チャイルドケア　パイン：¥470',
+                    'チェックアップKodomo（グレープ・ストロベリー・アップル）：¥290',
                     'チェックアップスタンダート：¥660',
                     'クリンプロ歯磨きペーストF1450：¥1,650',
-                    'ReCal Premium（グレープ）：¥780',
-                    'ReCal（マンゴー）：¥660',
-                    '＜フッ素うがい＞',
-                    'オラブリス（スタートセット・粉・ボトル）',
+                    'ReCal Premium（グレープ）：¥700',
+                    'ReCal（マンゴー）：¥630',
+                    '＜フッ化物うがい＞',
+                    'オラブリス（粉６包）：¥600',
+                    'オラブリス（ボトル）：¥300',
                     '＜キシリトール＞',
-                    'しまじろうキシリトールタブレット',
-                    'キシリトールチョコ'
+                    'しまじろうキシリトールタブレット：¥185',
+                    'キシリトールチョコ：¥440'
                 ] 
             }
         ];
@@ -1272,6 +1273,10 @@
             const proceduresText = (patientInfo.procedures && patientInfo.procedures.length > 0) 
                                  ? patientInfo.procedures.join('・') 
                                  : '記載なし';
+            
+            const filteredGoods = answers.oralCareGoods.filter(item => item !== '本日の状態に合わせて選んでほしい');
+            const goodsHTML = filteredGoods.length > 0 ? filteredGoods.map(item => `<div>- ${item}</div>`).join('') : '<div>なし</div>';
+
 
             // This long HTML string is for maintainability of the complex layout.
             const previewHTML = `
@@ -1337,9 +1342,9 @@
                         <div class="oral-function-content">
                             <div class="oral-function-grid">
                                 <div>口唇閉鎖力</div>
-                                <div>${patientInfo.lipClosureForce || ''}</div>
+                                <div>${patientInfo.lipClosureForce || ''} N</div>
                                 <div>舌圧</div>
-                                <div>${patientInfo.tonguePressure || ''}</div>
+                                <div>${patientInfo.tonguePressure || ''} N</div>
                             </div>
                             <div class="oral-function-options">
                                 <div>【噛み合わせ】 開咬型　　　　反対咬合　　　　上顎前突　　　　過蓋咬合<br>その他（　　　　　　　　　　　　　　　　　　　　　　　　）</div>
@@ -1351,7 +1356,7 @@
                     <div class="checklist-section">
                         <div class="checklist-title">❺ご希望のオーラルケアグッズ</div>
                         <div style="padding-left: 10px;">
-                            ${answers.oralCareGoods.length > 0 ? answers.oralCareGoods.map(item => `<div>- ${item}</div>`).join('') : '<div>なし</div>'}
+                            ${goodsHTML}
                         </div>
                     </div>
                     <div class="checklist-section">
