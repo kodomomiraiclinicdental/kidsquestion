@@ -226,8 +226,10 @@
         }
 
         .goods-quantity-input {
-            width: 70px;
-            padding: 10px;
+            width: 45px !important;
+            min-width: 45px !important;
+            flex-shrink: 0 !important;
+            padding: 8px 4px !important;
             margin-left: 10px;
             text-align: center;
         }
@@ -413,6 +415,48 @@
             align-items: center;
             gap: 5px;
         }
+        
+        /* BW Editor Styles */
+        .bw-editor-container {
+            display: grid;
+            grid-template-areas:
+                "upper-right upper-left"
+                "lower-right lower-left";
+            gap: 10px 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .bw-quadrant {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .bw-quadrant-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .bw-row {
+            display: flex;
+            justify-content: space-around;
+        }
+        .bw-surface {
+            text-align: center;
+        }
+        .bw-surface label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+        .bw-select {
+            width: 60px;
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
 
 
         /* 記録表プレビュー画面のスタイル */
@@ -587,13 +631,27 @@
             position: relative;
         }
         
-        .oral-exam-diagram .diag-wrapper {
+        .oral-exam-diagram .diag-wrapper, .oral-exam-diagram .bw-preview-spacer {
             position: relative;
             display: inline-block;
             width: 1.5em; /* 固定幅 */
             text-align: center;
             vertical-align: middle;
         }
+        
+        .bw-preview-table-container {
+            border: 1px solid #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 0 15px;
+            align-self: center;
+        }
+        .bw-preview-quad {
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: nowrap;
+        }
+
 
         .oral-exam-diagram .diag-code {
             position: absolute;
@@ -727,6 +785,41 @@
             margin-right: 5px;
             display: inline-block;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+        }
+
+        .modal-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .modal-footer {
+            margin-top: 30px;
+            text-align: right;
+        }
+
 
         @media (max-width: 768px) {
             .container {
@@ -924,6 +1017,11 @@
                 <label>歯式・ダイアグ</label>
                 <div id="teethEditor" class="teeth-editor-container"></div>
             </div>
+            
+            <div class="form-group">
+                <label>BWレントゲン所見</label>
+                <div id="bwEditor" class="bw-editor-container"></div>
+            </div>
 
             <div class="form-group form-row">
                 <div class="form-group">
@@ -971,6 +1069,10 @@
             <div class="form-group">
                 <label>本日の内容</label>
                 <div class="checkbox-grid" id="proceduresGroup"></div>
+            </div>
+
+            <div class="form-group">
+                 <button class="btn btn-secondary" id="editGoodsBtn" style="width: 100%; margin-right: 0;">オーラルケアグッズを編集</button>
             </div>
             
             <div class="form-group form-row">
@@ -1042,6 +1144,18 @@
     <!-- メッセージ表示用のシンプルなUI -->
     <div id="messageBox" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px; background: rgba(0,0,0,0.8); color: white; border-radius: 10px; z-index: 2000;"></div>
 
+    <!-- Oral Care Goods Edit Modal -->
+    <div id="goodsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title">オーラルケアグッズ編集</h2>
+            <div id="modalGoodsContainer" class="checkbox-group" style="max-height: 50vh; overflow-y: auto; padding-right: 15px;"></div>
+            <div class="modal-footer">
+                <button id="closeGoodsModalBtn" class="btn">完了</button>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
         // Firebase ライブラリを読み込み
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1107,7 +1221,11 @@
         const calculusRadioGroup = document.getElementById('calculusRadioGroup');
         const malocclusionCheckboxGroup = document.getElementById('malocclusionCheckboxGroup');
         const habitsCheckboxGroup = document.getElementById('habitsCheckboxGroup');
-
+        const editGoodsBtn = document.getElementById('editGoodsBtn');
+        const goodsModal = document.getElementById('goodsModal');
+        const modalGoodsContainer = document.getElementById('modalGoodsContainer');
+        const closeGoodsModalBtn = document.getElementById('closeGoodsModalBtn');
+        const bwEditor = document.getElementById('bwEditor');
 
         const searchNumberInput = document.getElementById('searchNumber');
         const searchBtn = document.getElementById('searchBtn');
@@ -1140,6 +1258,7 @@
             startTime: null,
             teethStatus: {},
             diagValues: {},
+            bwFindings: {},
             inflammation: 'なし',
             calculus: 'なし',
             malocclusion: [],
@@ -1234,6 +1353,7 @@
             patientInfo = { ...initialPatientInfo };
             patientInfo.teethStatus = {};
             patientInfo.diagValues = {};
+            patientInfo.bwFindings = {};
             ['upper', 'lower'].forEach(jaw => {
                 teethLayout[jaw].left.forEach(tooth => {
                     const id = `${jaw}_left_${tooth}`;
@@ -1272,6 +1392,7 @@
             document.querySelectorAll('#malocclusionCheckboxGroup .check-label, #habitsCheckboxGroup .check-label').forEach(l => l.classList.remove('selected'));
             document.querySelectorAll('#proceduresGroup input').forEach(i => i.checked = false);
             document.querySelectorAll('#proceduresGroup .check-label').forEach(l => l.classList.remove('selected'));
+            document.querySelectorAll('#bwEditor select').forEach(select => select.value = '');
             checkScreen1Completion();
         }
 
@@ -1446,6 +1567,66 @@
             teethEditor.appendChild(lowerRow);
         }
 
+        function initializeBwEditor() {
+            bwEditor.innerHTML = '';
+
+            const quadrants = [
+                { id: 'upper_right', title: '右上', area: 'upper-right' },
+                { id: 'upper_left', title: '左上', area: 'upper-left' },
+                { id: 'lower_right', title: '右下', area: 'lower-right' },
+                { id: 'lower_left', title: '左下', area: 'lower-left' }
+            ];
+            const rightSurfaces = ['6-E', 'E-D', 'D-C'];
+            const leftSurfaces = ['C-D', 'D-E', 'E-6'];
+
+            quadrants.forEach(quad => {
+                const quadDiv = document.createElement('div');
+                quadDiv.className = 'bw-quadrant';
+                quadDiv.style.gridArea = quad.area;
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'bw-quadrant-title';
+                titleDiv.textContent = quad.title;
+                quadDiv.appendChild(titleDiv);
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'bw-row';
+
+                const surfaces = quad.id.includes('right') ? rightSurfaces : leftSurfaces;
+                
+                surfaces.forEach(surface => {
+                    const surfaceDiv = document.createElement('div');
+                    surfaceDiv.className = 'bw-surface';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = surface.replace('-', '|');
+                    
+                    const select = document.createElement('select');
+                    select.className = 'bw-select';
+                    const surfaceId = `${quad.id}_${surface.replace('-', '')}`;
+                    select.dataset.surfaceId = surfaceId;
+
+                    ['', 'CO', 'C'].forEach(optionValue => {
+                        const option = document.createElement('option');
+                        option.value = optionValue;
+                        option.textContent = optionValue || '(なし)';
+                        select.appendChild(option);
+                    });
+
+                    select.addEventListener('change', (e) => {
+                        patientInfo.bwFindings[surfaceId] = e.target.value;
+                    });
+
+                    surfaceDiv.appendChild(label);
+                    surfaceDiv.appendChild(select);
+                    rowDiv.appendChild(surfaceDiv);
+                });
+
+                quadDiv.appendChild(rowDiv);
+                bwEditor.appendChild(quadDiv);
+            });
+        }
+
         function initializeProceduresCheckboxes() {
             const procedures = ['フッ化物塗布', 'SC', 'PMTC', 'ダイアグ', 'パノラマ', '舌圧', 'りっぷる', 'ホームケアチェック', 'その他'];
             procedures.forEach(proc => {
@@ -1483,9 +1664,94 @@
             startBtn.disabled = !(patientInfo.staff && patientInfo.number && patientInfo.fluoride && patientInfo.inputDate);
         }
 
+        function populateGoodsModal() {
+            modalGoodsContainer.innerHTML = '';
+            const question = questions.find(q => q.id === 'oralCareGoods');
+            if (!question) return;
+
+            const specialOptions = ['なし', '本日の状態に合わせて選んでほしい', '相談したい'];
+
+            question.options.forEach(option => {
+                if (option.startsWith('＜')) {
+                    const header = document.createElement('div');
+                    header.textContent = option;
+                    header.style.fontWeight = 'bold';
+                    header.style.marginTop = '15px';
+                    header.style.color = '#333';
+                    header.style.paddingLeft = '25px';
+                    modalGoodsContainer.appendChild(header);
+                    return;
+                }
+
+                const isProduct = !specialOptions.includes(option);
+                
+                const itemWrapper = document.createElement('div');
+                if (isProduct) {
+                    itemWrapper.classList.add('goods-item');
+                }
+
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'modal_oralCareGoods';
+                input.value = option;
+                
+                const existingItem = answers.oralCareGoods.find(item => item.name === option);
+                if (existingItem) {
+                    input.checked = true;
+                    label.classList.add('selected');
+                }
+                
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(option));
+                itemWrapper.appendChild(label);
+                
+                if (isProduct) {
+                    const quantityInput = document.createElement('input');
+                    quantityInput.type = 'number';
+                    quantityInput.className = 'goods-quantity-input';
+                    quantityInput.min = 1;
+                    quantityInput.max = 10;
+                    
+                    quantityInput.style.display = existingItem ? 'inline-block' : 'none';
+                    quantityInput.value = existingItem ? existingItem.quantity : 1;
+
+                    quantityInput.addEventListener('input', () => {
+                        const item = answers.oralCareGoods.find(i => i.name === option);
+                        if (item) {
+                            item.quantity = parseInt(quantityInput.value, 10) || 1;
+                        }
+                    });
+                    itemWrapper.appendChild(quantityInput);
+                }
+
+                input.addEventListener('change', () => {
+                    const value = input.value;
+                    if (input.checked) {
+                        if (!answers.oralCareGoods.some(item => item.name === value)) {
+                            answers.oralCareGoods.push({ name: value, quantity: 1 });
+                        }
+                        if(isProduct) {
+                            itemWrapper.querySelector('.goods-quantity-input').style.display = 'inline-block';
+                        }
+                    } else {
+                        answers.oralCareGoods = answers.oralCareGoods.filter(item => item.name !== value);
+                        if(isProduct) {
+                            itemWrapper.querySelector('.goods-quantity-input').style.display = 'none';
+                        }
+                    }
+                    label.classList.toggle('selected', input.checked);
+                });
+                
+                modalGoodsContainer.appendChild(itemWrapper);
+            });
+        }
+
+
         function displayQuestion() {
             questionContainer.innerHTML = '';
-
             const question = questions[currentQuestion];
             const title = document.createElement('div');
             title.className = 'question-title';
@@ -1501,118 +1767,125 @@
 
             const optionsContainer = document.createElement('div');
             optionsContainer.className = 'checkbox-group';
+            questionContainer.appendChild(optionsContainer);
 
-            const specialOptions = ['なし', '本日の状態に合わせて選んでほしい', '相談したい'];
-
-            question.options.forEach(option => {
-                if (option.startsWith('＜')) {
-                    const header = document.createElement('div');
-                    header.textContent = option;
-                    header.style.fontWeight = 'bold';
-                    header.style.marginTop = '15px';
-                    header.style.color = '#333';
-                    header.style.paddingLeft = '25px';
-                    optionsContainer.appendChild(header);
-                    return; 
-                }
-
-                const isProduct = question.id === 'oralCareGoods' && !specialOptions.includes(option);
-                
-                const itemWrapper = document.createElement('div');
-                 if (isProduct) {
-                    itemWrapper.classList.add('goods-item');
-                }
-
-                const label = document.createElement('label');
-                label.className = 'checkbox-label';
-                
-                const input = document.createElement('input');
-                input.type = question.type;
-                input.name = question.id;
-                input.value = option;
-                
-                if (question.type === 'radio') {
-                     if (answers[question.id] === option) {
-                        input.checked = true;
-                        label.classList.add('selected');
+            //Delegate to the shared goods renderer for that specific question
+            if (question.id === 'oralCareGoods') {
+                 const goodsQuestion = questions.find(q => q.id === 'oralCareGoods');
+                 const specialOptions = ['なし', '本日の状態に合わせて選んでほしい', '相談したい'];
+                 goodsQuestion.options.forEach(option => {
+                    if (option.startsWith('＜')) {
+                        const header = document.createElement('div');
+                        header.textContent = option;
+                        header.style.fontWeight = 'bold';
+                        header.style.marginTop = '15px';
+                        header.style.color = '#333';
+                        header.style.paddingLeft = '25px';
+                        optionsContainer.appendChild(header);
+                        return;
                     }
-                } else if (question.id === 'oralCareGoods') {
-                    const existingItem = answers[question.id].find(item => item.name === option);
+
+                    const isProduct = !specialOptions.includes(option);
+                    const itemWrapper = document.createElement('div');
+                    if (isProduct) itemWrapper.classList.add('goods-item');
+
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-label';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.name = 'oralCareGoods';
+                    input.value = option;
+                    
+                    const existingItem = answers.oralCareGoods.find(item => item.name === option);
                     if (existingItem) {
                         input.checked = true;
                         label.classList.add('selected');
                     }
-                } else { // Simple checkbox like toothpaste
-                    if (answers[question.id].includes(option)) {
-                        input.checked = true;
-                        label.classList.add('selected');
-                    }
-                }
-                
-                label.appendChild(input);
-                label.appendChild(document.createTextNode(option));
-                itemWrapper.appendChild(label);
-                
-                if (isProduct) {
-                    const quantityInput = document.createElement('input');
-                    quantityInput.type = 'number';
-                    quantityInput.className = 'goods-quantity-input';
-                    quantityInput.min = 1;
-                    quantityInput.max = 10;
                     
-                    const existingItem = answers[question.id].find(item => item.name === option);
-                    quantityInput.style.display = existingItem ? 'inline-block' : 'none';
-                    quantityInput.value = existingItem ? existingItem.quantity : 1;
-
-                    quantityInput.addEventListener('input', () => {
-                        const item = answers[question.id].find(i => i.name === option);
-                        if (item) {
-                            item.quantity = parseInt(quantityInput.value, 10) || 1;
-                        }
-                    });
-                    itemWrapper.appendChild(quantityInput);
-                }
-
-
-                input.addEventListener('change', () => {
-                    if (question.type === 'radio') {
-                        answers[question.id] = input.value;
-                        document.querySelectorAll(`input[name="${question.id}"]`).forEach(radio => {
-                            radio.parentElement.classList.toggle('selected', radio.checked);
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(option));
+                    itemWrapper.appendChild(label);
+                    
+                    if (isProduct) {
+                        const quantityInput = document.createElement('input');
+                        quantityInput.type = 'number';
+                        quantityInput.className = 'goods-quantity-input';
+                        quantityInput.min = 1;
+                        quantityInput.max = 10;
+                        quantityInput.style.display = existingItem ? 'inline-block' : 'none';
+                        quantityInput.value = existingItem ? existingItem.quantity : 1;
+                        quantityInput.addEventListener('input', () => {
+                            const item = answers.oralCareGoods.find(i => i.name === option);
+                            if (item) item.quantity = parseInt(quantityInput.value, 10) || 1;
                         });
-                    } else { // All checkbox logic
+                        itemWrapper.appendChild(quantityInput);
+                    }
+
+                    input.addEventListener('change', () => {
                         const value = input.value;
-                        if (question.id === 'oralCareGoods') {
-                            if (input.checked) {
-                                if (!answers[question.id].some(item => item.name === value)) {
-                                    answers[question.id].push({ name: value, quantity: 1 });
-                                }
-                                if(isProduct) {
-                                    itemWrapper.querySelector('.goods-quantity-input').style.display = 'inline-block';
-                                }
-                            } else {
-                                answers[question.id] = answers[question.id].filter(item => item.name !== value);
-                                if(isProduct) {
-                                    itemWrapper.querySelector('.goods-quantity-input').style.display = 'none';
-                                }
+                        if (input.checked) {
+                            if (!answers.oralCareGoods.some(item => item.name === value)) {
+                                answers.oralCareGoods.push({ name: value, quantity: 1 });
                             }
-                        } else { // Simple checkbox logic
-                             if (input.checked) {
-                                if (!answers[question.id].includes(value)) {
-                                    answers[question.id].push(value);
-                                }
-                            } else {
-                                answers[question.id] = answers[question.id].filter(v => v !== value);
-                            }
+                            if(isProduct) itemWrapper.querySelector('.goods-quantity-input').style.display = 'inline-block';
+                        } else {
+                            answers.oralCareGoods = answers.oralCareGoods.filter(item => item.name !== value);
+                            if(isProduct) itemWrapper.querySelector('.goods-quantity-input').style.display = 'none';
                         }
                         label.classList.toggle('selected', input.checked);
+                        checkQuestionCompletion();
+                    });
+                    
+                    optionsContainer.appendChild(itemWrapper);
+                 });
+            } else {
+                // Logic for other question types (radio, simple checkbox)
+                question.options.forEach(option => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-label';
+                    
+                    const input = document.createElement('input');
+                    input.type = question.type;
+                    input.name = question.id;
+                    input.value = option;
+
+                    if (question.type === 'radio') {
+                        if (answers[question.id] === option) {
+                            input.checked = true;
+                            label.classList.add('selected');
+                        }
+                    } else { // Checkbox
+                        if (answers[question.id].includes(option)) {
+                            input.checked = true;
+                            label.classList.add('selected');
+                        }
                     }
-                    checkQuestionCompletion();
+
+                    input.addEventListener('change', () => {
+                        if (question.type === 'radio') {
+                            answers[question.id] = input.value;
+                            document.querySelectorAll(`input[name="${question.id}"]`).forEach(radio => {
+                                radio.parentElement.classList.toggle('selected', radio.checked);
+                            });
+                        } else {
+                            if (input.checked) {
+                                if (!answers[question.id].includes(input.value)) {
+                                    answers[question.id].push(input.value);
+                                }
+                            } else {
+                                answers[question.id] = answers[question.id].filter(v => v !== input.value);
+                            }
+                            label.classList.toggle('selected', input.checked);
+                        }
+                        checkQuestionCompletion();
+                    });
+
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(option));
+                    optionsContainer.appendChild(label);
                 });
-                
-                optionsContainer.appendChild(itemWrapper);
-            });
-            questionContainer.appendChild(optionsContainer);
+            }
 
             progressFill.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
             prevBtn.style.visibility = currentQuestion === 0 ? 'hidden' : 'visible';
@@ -1702,9 +1975,8 @@
                     });
                 });
             }
-            if (!patientInfo.diagValues) {
-                patientInfo.diagValues = {};
-            }
+            if (!patientInfo.diagValues) patientInfo.diagValues = {};
+            if (!patientInfo.bwFindings) patientInfo.bwFindings = {};
             if (patientInfo.inflammation === undefined) patientInfo.inflammation = 'なし';
             if (patientInfo.calculus === undefined) patientInfo.calculus = 'なし';
             if (!patientInfo.malocclusion) patientInfo.malocclusion = [];
@@ -1736,6 +2008,57 @@
             return null;
         }
         
+        function renderBwFindingsTable() {
+            if (!patientInfo.bwFindings || Object.keys(patientInfo.bwFindings).length === 0) {
+                return '';
+            }
+
+            let hasFindings = Object.values(patientInfo.bwFindings).some(v => v);
+
+            let html = `<div class="bw-preview-table-container">`;
+            html += `<div class="diagnosis-title" style="font-size: 14px; text-align: left; margin-bottom: 5px;">BWレントゲン所見</div>`;
+            
+            if (!hasFindings) {
+                html += '<div>特記事項なし</div>';
+                html += '</div>';
+                return html;
+            }
+
+            const quadrants = [
+                { id: 'upper_right', title: '右上' },
+                { id: 'upper_left', title: '左上' },
+                { id: 'lower_right', title: '右下' },
+                { id: 'lower_left', title: '左下' }
+            ];
+            const rightSurfaces = ['6-E', 'E-D', 'D-C'];
+            const leftSurfaces = ['C-D', 'D-E', 'E-6'];
+
+            let findingsHtml = '';
+            
+            quadrants.forEach(quad => {
+                const surfaces = quad.id.includes('right') ? rightSurfaces : leftSurfaces;
+                let quadFindings = [];
+                surfaces.forEach(surface => {
+                    const surfaceId = `${quad.id}_${surface.replace('-', '')}`;
+                    if (patientInfo.bwFindings[surfaceId]) {
+                        quadFindings.push(`${surface.replace('-', '|')}: <strong style="color:red;">${patientInfo.bwFindings[surfaceId]}</strong>`);
+                    }
+                });
+
+                if (quadFindings.length > 0) {
+                    findingsHtml += `<div class="bw-preview-quad"><strong>${quad.title}:</strong> ${quadFindings.join(', ')}</div>`;
+                }
+            });
+
+            if (findingsHtml !== '') {
+                 html += findingsHtml;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+
         function generatePreview() {
             screens.screen5.innerHTML = '';
 
@@ -1881,7 +2204,7 @@
                     </div>
 
                     <div class="diagnosis-section">
-                        <div class="diagnosis-title">❷口腔内診査・ダイアグ数値記入</div>
+                        <div class="diagnosis-title">❷口腔内診査・ダイアグ・BW</div>
                         <div class="oral-exam-content">
                             <div class="oral-exam-diagram">
                                 <div>${renderTeeth('upper', 'diag')}</div>
@@ -1890,6 +2213,7 @@
                                 <div>${renderTeeth('lower', 'teeth')}</div>
                                 <div>${renderTeeth('lower', 'diag')}</div>
                             </div>
+                            ${renderBwFindingsTable()}
                             <div class="oral-exam-options">
                                 <div>発赤・腫脹　　${patientInfo.inflammation}</div>
                                 <div>歯石　　　　　${patientInfo.calculus}</div>
@@ -2117,7 +2441,6 @@
                 photoValueSelect.value = photoValue;
             }
             
-            // Populate teeth editor
             for (const id in patientInfo.teethStatus) {
                 const btn = teethEditor.querySelector(`[data-tooth-id="${id}"]`);
                 if (btn) {
@@ -2126,6 +2449,13 @@
                  const diagInput = teethEditor.querySelector(`[data-diag-id="${id}"]`);
                 if (diagInput) {
                     diagInput.value = patientInfo.diagValues[id] || '';
+                }
+            }
+
+            for (const surfaceId in patientInfo.bwFindings) {
+                const select = bwEditor.querySelector(`[data-surface-id="${surfaceId}"]`);
+                if (select) {
+                    select.value = patientInfo.bwFindings[surfaceId] || '';
                 }
             }
 
@@ -2293,11 +2623,21 @@
             checkScreen1Completion();
         });
 
+        editGoodsBtn.addEventListener('click', () => {
+            populateGoodsModal();
+            goodsModal.style.display = 'flex';
+        });
+
+        closeGoodsModalBtn.addEventListener('click', () => {
+            goodsModal.style.display = 'none';
+        });
+
 
         // --- Initialization ---
         initializeScreen1();
         initializeProceduresCheckboxes();
         initializeTeethEditor();
+        initializeBwEditor();
         initializeStaffScreenOptions();
         resetState();
     </script>
