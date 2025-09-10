@@ -107,16 +107,17 @@
             border-color: #667eea;
         }
 
-        input[type="text"], input[type="number"], select, input[type="date"] {
+        input[type="text"], input[type="number"], select, input[type="date"], textarea {
             width: 100%;
             padding: 15px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
             transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="date"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="date"]:focus, textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -415,6 +416,19 @@
             align-items: center;
             gap: 5px;
         }
+
+        .mih-checkbox-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            height: 18px; 
+            margin: 1px 0;
+        }
+        .mih-checkbox {
+            width: 14px;
+            height: 14px;
+        }
         
         /* BW Editor Styles */
         .bw-editor-container {
@@ -631,7 +645,7 @@
             position: relative;
         }
         
-        .oral-exam-diagram .diag-wrapper, .oral-exam-diagram .bw-preview-spacer {
+        .oral-exam-diagram .diag-wrapper {
             position: relative;
             display: inline-block;
             width: 1.5em; /* 固定幅 */
@@ -675,6 +689,19 @@
         .oral-exam-diagram .diag-code-c {
             background-color: red;
             color: black;
+        }
+        .oral-exam-diagram .mih-preview {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            color: blue;
+            font-weight: bold;
+            font-size: 10px;
+            top: -2.2em;
+        }
+        .oral-exam-diagram .mih-preview.lower {
+            top: auto;
+            bottom: -2.2em;
         }
 
         .oral-exam-diagram .center-line {
@@ -742,6 +769,14 @@
 
         .treatment-plan {
             margin-top: 20px;
+        }
+        
+        .memo-box {
+            white-space: pre-wrap;
+            min-height: 60px;
+            border: 1px solid #ccc;
+            padding: 8px;
+            line-height: 1.5;
         }
 
         .checklist-section {
@@ -1014,7 +1049,7 @@
             <div class="result-summary" id="staffResultSummary"></div>
 
             <div class="form-group">
-                <label>歯式・ダイアグ</label>
+                <label>歯式・ダイアグ・MIH</label>
                 <div id="teethEditor" class="teeth-editor-container"></div>
             </div>
             
@@ -1095,6 +1130,11 @@
                         <option value="5">5枚</option>
                     </select>
                 </div>
+            </div>
+
+             <div class="form-group">
+                <label for="treatmentMemo">治療方針・メモなど</label>
+                <textarea id="treatmentMemo" rows="4" placeholder="治療方針やメモを入力..."></textarea>
             </div>
             
             <div class="navigation">
@@ -1226,6 +1266,7 @@
         const modalGoodsContainer = document.getElementById('modalGoodsContainer');
         const closeGoodsModalBtn = document.getElementById('closeGoodsModalBtn');
         const bwEditor = document.getElementById('bwEditor');
+        const treatmentMemoInput = document.getElementById('treatmentMemo');
 
         const searchNumberInput = document.getElementById('searchNumber');
         const searchBtn = document.getElementById('searchBtn');
@@ -1259,11 +1300,13 @@
             teethStatus: {},
             diagValues: {},
             bwFindings: {},
+            mihStatus: {},
             inflammation: 'なし',
             calculus: 'なし',
             malocclusion: [],
             habits: [],
-            inputDate: ''
+            inputDate: '',
+            treatmentMemo: ''
         };
 
         const initialAnswers = {
@@ -1348,12 +1391,14 @@
             const dd = String(today.getDate()).padStart(2, '0');
             return `${yyyy}-${mm}-${dd}`;
         }
-
-        function resetState() {
+        
+        function resetDataState() {
             patientInfo = { ...initialPatientInfo };
             patientInfo.teethStatus = {};
             patientInfo.diagValues = {};
             patientInfo.bwFindings = {};
+            patientInfo.mihStatus = {};
+            // Initialize all teeth as present
             ['upper', 'lower'].forEach(jaw => {
                 teethLayout[jaw].left.forEach(tooth => {
                     const id = `${jaw}_left_${tooth}`;
@@ -1367,13 +1412,18 @@
                 });
             });
 
-            answers = JSON.parse(JSON.stringify(initialAnswers));
+            answers = JSON.parse(JSON.stringify(initialAnswers)); // Deep copy for arrays
             currentQuestion = 0;
             currentRecordId = null;
-            
+
+            const today = getTodayString();
+            patientInfo.inputDate = today;
+        }
+
+        function resetUiState() {
+            // Clear inputs
             const today = getTodayString();
             inputDate.value = today;
-            patientInfo.inputDate = today;
 
             patientNumberInput.value = '';
             pcrValueInput.value = '';
@@ -1381,6 +1431,7 @@
             lipClosureForceValueInput.value = '';
             bwValueSelect.value = '';
             photoValueSelect.value = '';
+            treatmentMemoInput.value = '';
             document.querySelectorAll('#staffRadioGroup .radio-label, #fluorideRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
             document.querySelectorAll('#staffRadioGroup input, #fluorideRadioGroup input').forEach(i => i.checked = false);
             document.querySelectorAll('#inflammationRadioGroup .radio-label, #calculusRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
@@ -1392,8 +1443,14 @@
             document.querySelectorAll('#malocclusionCheckboxGroup .check-label, #habitsCheckboxGroup .check-label').forEach(l => l.classList.remove('selected'));
             document.querySelectorAll('#proceduresGroup input').forEach(i => i.checked = false);
             document.querySelectorAll('#proceduresGroup .check-label').forEach(l => l.classList.remove('selected'));
-            document.querySelectorAll('#bwEditor select').forEach(select => select.value = '');
+            document.querySelectorAll('#bwEditor select').forEach(select => select.value = '健全');
+            document.querySelectorAll('.mih-checkbox').forEach(checkbox => checkbox.checked = false);
             checkScreen1Completion();
+        }
+
+        function resetState() {
+            resetDataState();
+            resetUiState();
         }
 
         function initializeScreen1() {
@@ -1526,12 +1583,22 @@
                     btn.textContent = tooth;
                     btn.dataset.toothId = id;
                     
+                    const mihContainer = document.createElement('label');
+                    mihContainer.className = 'mih-checkbox-container';
+                    const mihCheckbox = document.createElement('input');
+                    mihCheckbox.type = 'checkbox';
+                    mihCheckbox.className = 'mih-checkbox';
+                    mihCheckbox.dataset.mihId = id;
+                    mihContainer.appendChild(mihCheckbox);
+                    
                     if (jaw === 'upper') {
+                        container.appendChild(mihContainer);
                         container.appendChild(diagSelect);
                         container.appendChild(btn);
                     } else {
                         container.appendChild(btn);
                         container.appendChild(diagSelect);
+                        container.appendChild(mihContainer);
                     }
                     fragment.appendChild(container);
                 });
@@ -1606,12 +1673,14 @@
                     const surfaceId = `${quad.id}_${surface.replace('-', '')}`;
                     select.dataset.surfaceId = surfaceId;
 
-                    ['', 'CO', 'C'].forEach(optionValue => {
+                    ['健全', 'CO', 'C'].forEach(optionValue => {
                         const option = document.createElement('option');
                         option.value = optionValue;
-                        option.textContent = optionValue || '(なし)';
+                        option.textContent = optionValue;
                         select.appendChild(option);
                     });
+                    
+                    patientInfo.bwFindings[surfaceId] = '健全';
 
                     select.addEventListener('change', (e) => {
                         patientInfo.bwFindings[surfaceId] = e.target.value;
@@ -1977,10 +2046,12 @@
             }
             if (!patientInfo.diagValues) patientInfo.diagValues = {};
             if (!patientInfo.bwFindings) patientInfo.bwFindings = {};
+            if (!patientInfo.mihStatus) patientInfo.mihStatus = {};
             if (patientInfo.inflammation === undefined) patientInfo.inflammation = 'なし';
             if (patientInfo.calculus === undefined) patientInfo.calculus = 'なし';
             if (!patientInfo.malocclusion) patientInfo.malocclusion = [];
             if (!patientInfo.habits) patientInfo.habits = [];
+            if (!patientInfo.treatmentMemo) patientInfo.treatmentMemo = '';
             if (!patientInfo.inputDate) {
                 const recordDate = record.timestamp.toDate();
                 const yyyy = recordDate.getFullYear();
@@ -2013,7 +2084,7 @@
                 return '';
             }
 
-            let hasFindings = Object.values(patientInfo.bwFindings).some(v => v);
+            let hasFindings = Object.values(patientInfo.bwFindings).some(v => v && v !== '健全');
 
             let html = `<div class="bw-preview-table-container">`;
             html += `<div class="diagnosis-title" style="font-size: 14px; text-align: left; margin-bottom: 5px;">BWレントゲン所見</div>`;
@@ -2040,7 +2111,7 @@
                 let quadFindings = [];
                 surfaces.forEach(surface => {
                     const surfaceId = `${quad.id}_${surface.replace('-', '')}`;
-                    if (patientInfo.bwFindings[surfaceId]) {
+                    if (patientInfo.bwFindings[surfaceId] && patientInfo.bwFindings[surfaceId] !== '健全') {
                         quadFindings.push(`${surface.replace('-', '|')}: <strong style="color:red;">${patientInfo.bwFindings[surfaceId]}</strong>`);
                     }
                 });
@@ -2052,6 +2123,8 @@
 
             if (findingsHtml !== '') {
                  html += findingsHtml;
+            } else {
+                 html += '<div>特記事項なし</div>';
             }
 
             html += '</div>';
@@ -2140,7 +2213,13 @@
                             const lowerClass = jaw === 'lower' ? ' lower' : '';
                             diagCodeHTML = `<span class="diag-code ${diagCodeInfo.className}${lowerClass}">${diagCodeInfo.text}</span>`;
                         }
-                        return `<span class="diag-wrapper">${diagCodeHTML}${diagValue || '&nbsp;'}</span>`;
+
+                        let mihHTML = '';
+                        if (patientInfo.mihStatus && patientInfo.mihStatus[id]) {
+                            const lowerClass = jaw === 'lower' ? ' lower' : '';
+                            mihHTML = `<span class="mih-preview${lowerClass}">MIH</span>`;
+                        }
+                        return `<span class="diag-wrapper">${mihHTML}${diagCodeHTML}${diagValue || '&nbsp;'}</span>`;
                     }
                 };
 
@@ -2157,6 +2236,7 @@
             
             const malocclusionText = (patientInfo.malocclusion && patientInfo.malocclusion.length > 0) ? patientInfo.malocclusion.join('・') : 'なし';
             const habitsText = (patientInfo.habits && patientInfo.habits.length > 0) ? patientInfo.habits.join('・') : 'なし';
+            const memoText = patientInfo.treatmentMemo || '\n\n\n';
 
 
             const previewHTML = `
@@ -2235,14 +2315,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="treatment-plan"><div class="diagnosis-title">❹治療計画</div></div>
                     <div class="checklist-section">
-                        <div class="checklist-title">❺オーラルケアグッズの確認</div>
+                        <div class="checklist-title">❹オーラルケアグッズの確認</div>
                         <div style="padding-left: 10px;">
                            ${goodsHTML}
                         </div>
                     </div>
-                    <div class="memo-section"><div class="diagnosis-title">❻メモ</div></div>
+                    <div class="treatment-plan">
+                        <div class="diagnosis-title">❺治療計画・メモなど</div>
+                        <div class="memo-box">${memoText.replace(/\n/g, '<br>')}</div>
+                    </div>
                 </div>`;
             screens.screen5.innerHTML = previewHTML;
         }
@@ -2408,6 +2490,7 @@
             dmfValueSelect.value = patientInfo.dmfValue || '';
             tonguePressureValueInput.value = patientInfo.tonguePressure || '';
             lipClosureForceValueInput.value = patientInfo.lipClosureForce || '';
+            treatmentMemoInput.value = patientInfo.treatmentMemo || '';
             
             bwValueSelect.value = '';
             photoValueSelect.value = '';
@@ -2452,10 +2535,18 @@
                 }
             }
 
+            document.querySelectorAll('.mih-checkbox').forEach(checkbox => checkbox.checked = false); // Reset first
+            for (const id in patientInfo.mihStatus) {
+                if (patientInfo.mihStatus[id]) {
+                    const checkbox = teethEditor.querySelector(`[data-mih-id="${id}"]`);
+                    if (checkbox) checkbox.checked = true;
+                }
+            }
+
             for (const surfaceId in patientInfo.bwFindings) {
                 const select = bwEditor.querySelector(`[data-surface-id="${surfaceId}"]`);
                 if (select) {
-                    select.value = patientInfo.bwFindings[surfaceId] || '';
+                    select.value = patientInfo.bwFindings[surfaceId] || '健全';
                 }
             }
 
@@ -2523,6 +2614,7 @@
             patientInfo.dmfValue = dmfValueSelect.value;
             patientInfo.tonguePressure = tonguePressureValueInput.value;
             patientInfo.lipClosureForce = lipClosureForceValueInput.value;
+            patientInfo.treatmentMemo = treatmentMemoInput.value;
 
             patientInfo.procedures = [];
             document.querySelectorAll('#proceduresGroup input[type="checkbox"]:checked').forEach(checkbox => {
@@ -2581,6 +2673,13 @@
              if (e.target.classList.contains('diag-input')) {
                 const id = e.target.dataset.diagId;
                 patientInfo.diagValues[id] = e.target.value;
+            } else if (e.target.classList.contains('mih-checkbox')) {
+                const id = e.target.dataset.mihId;
+                if (e.target.checked) {
+                    patientInfo.mihStatus[id] = true;
+                } else {
+                    delete patientInfo.mihStatus[id];
+                }
             }
         });
 
@@ -2634,12 +2733,13 @@
 
 
         // --- Initialization ---
+        resetState();
         initializeScreen1();
         initializeProceduresCheckboxes();
         initializeTeethEditor();
         initializeBwEditor();
         initializeStaffScreenOptions();
-        resetState();
+        resetUiState();
     </script>
 </body>
 </html>
