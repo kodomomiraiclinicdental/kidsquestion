@@ -72,6 +72,17 @@
             font-weight: 600;
         }
         
+        #birthDateDisplay, #lastVisitDisplay {
+            font-size: 16px;
+            color: #333;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            min-height: 53px; /* Match input height */
+            display: flex;
+            align-items: center;
+        }
+
         .checkbox-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1055,6 +1066,17 @@
             </div>
             
             <div class="form-group">
+                <label for="birthDateS1Input">生年月日</label>
+                <input type="date" id="birthDateS1Input">
+                <div id="birthDateDisplay" style="display: none;"></div>
+            </div>
+
+            <div class="form-group" id="lastVisitGroup" style="display: none;">
+                <label>前回来院日</label>
+                <div id="lastVisitDisplay"></div>
+            </div>
+
+            <div class="form-group">
                 <label>フッ化物塗布間隔</label>
                 <div class="radio-group" id="fluorideRadioGroup"></div>
             </div>
@@ -1101,6 +1123,11 @@
             </div>
             
             <div class="result-summary" id="staffResultSummary"></div>
+            
+            <div class="form-group">
+                <label for="birthDate">生年月日（西暦）</label>
+                <input type="date" id="birthDate">
+            </div>
 
             <div class="form-group">
                 <label>歯式・ダイアグ・MIH</label>
@@ -1122,7 +1149,7 @@
                     <div class="radio-group" id="calculusRadioGroup"></div>
                 </div>
             </div>
-            
+
             <div class="form-group form-row">
                 <div class="form-group">
                     <label for="pcrValue">PCR値（%）</label>
@@ -1253,7 +1280,7 @@
     <script type="module">
         // Firebase ライブラリを読み込み
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, doc, updateDoc, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // Firebase コンソールで取得した設定をここに貼り付ける
         const firebaseConfig = {
@@ -1290,6 +1317,10 @@
         const inputDate = document.getElementById('inputDate');
         const startBtn = document.getElementById('startBtn');
         const backToStartFromS1Btn = document.getElementById('backToStartFromS1Btn');
+        const birthDateDisplay = document.getElementById('birthDateDisplay');
+        const birthDateS1Input = document.getElementById('birthDateS1Input');
+        const lastVisitGroup = document.getElementById('lastVisitGroup');
+        const lastVisitDisplay = document.getElementById('lastVisitDisplay');
 
         const progressFill = document.getElementById('progressFill');
         const questionContainer = document.getElementById('questionContainer');
@@ -1321,6 +1352,7 @@
         const closeGoodsModalBtn = document.getElementById('closeGoodsModalBtn');
         const bwEditor = document.getElementById('bwEditor');
         const treatmentMemoInput = document.getElementById('treatmentMemo');
+        const birthDateInput = document.getElementById('birthDate');
 
         const searchNumberInput = document.getElementById('searchNumber');
         const searchBtn = document.getElementById('searchBtn');
@@ -1336,6 +1368,7 @@
         
         let patientInfo = {};
         let answers = {};
+        let previousOralCareGoods = [];
         let currentQuestion = 0;
         let currentPatientRecords = [];
         let pcrChartInstance = null;
@@ -1361,6 +1394,7 @@
             habits: [],
             inputDate: '',
             treatmentMemo: '',
+            birthDate: ''
         };
 
         const initialAnswers = {
@@ -1467,6 +1501,7 @@
             });
 
             answers = JSON.parse(JSON.stringify(initialAnswers)); // Deep copy for arrays
+            previousOralCareGoods = [];
             currentQuestion = 0;
             currentRecordId = null;
 
@@ -1480,12 +1515,22 @@
             inputDate.value = today;
 
             patientNumberInput.value = '';
+            
+            birthDateS1Input.style.display = 'block';
+            birthDateDisplay.style.display = 'none';
+            birthDateDisplay.textContent = '';
+            birthDateS1Input.value = '';
+            lastVisitGroup.style.display = 'none';
+            lastVisitDisplay.textContent = '';
+
+
             pcrValueInput.value = '';
             tonguePressureValueInput.value = '';
             lipClosureForceValueInput.value = '';
             bwValueSelect.value = '';
             photoValueSelect.value = '';
             treatmentMemoInput.value = '';
+            birthDateInput.value = '';
             document.querySelectorAll('#staffRadioGroup .radio-label, #fluorideRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
             document.querySelectorAll('#staffRadioGroup input, #fluorideRadioGroup input').forEach(i => i.checked = false);
             document.querySelectorAll('#inflammationRadioGroup .radio-label, #calculusRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
@@ -1834,10 +1879,18 @@
         }
 
 
-        function populateGoodsList(container, isQuestionScreen) {
+        function populateGoodsList(container, isQuestionScreen, previousGoods = []) {
             container.innerHTML = '';
             const question = questions.find(q => q.id === 'oralCareGoods');
             if (!question) return;
+
+            if(isQuestionScreen){
+                const legend = document.createElement('div');
+                legend.style.marginBottom = '15px';
+                legend.style.fontSize = '14px';
+                legend.innerHTML = '<span style="color: #ffc107; font-size: 18px; vertical-align: middle;">★</span> は前回ご購入の商品です';
+                container.appendChild(legend);
+            }
 
             const specialOptions = ['なし', '本日の状態に合わせて選んでほしい', '相談したい'];
 
@@ -1863,9 +1916,19 @@
                 const label = document.createElement('label');
                 label.className = 'checkbox-label';
                 
+                const isPreviouslyPurchased = previousGoods.some(item => item.name === option);
+                if (isPreviouslyPurchased) {
+                    const star = document.createElement('span');
+                    star.textContent = '★';
+                    star.style.color = '#ffc107';
+                    star.style.marginRight = '8px';
+                    star.style.fontSize = '18px';
+                    label.appendChild(star);
+                }
+
                 const input = document.createElement('input');
                 input.type = 'checkbox';
-                input.name = 'modal_oralCareGoods';
+                input.name = isQuestionScreen ? 'question_oralCareGoods' : 'modal_oralCareGoods';
                 input.value = option;
                 
                 const existingItem = answers.oralCareGoods.find(item => item.name === option);
@@ -1930,7 +1993,7 @@
             questionContainer.appendChild(optionsContainer);
             
             if (question.id === 'oralCareGoods') {
-                 populateGoodsList(optionsContainer, true);
+                 populateGoodsList(optionsContainer, true, previousOralCareGoods);
             } else {
                 // Logic for other question types (radio, simple checkbox)
                 question.options.forEach(option => {
@@ -2084,6 +2147,7 @@
             if (!patientInfo.malocclusion) patientInfo.malocclusion = [];
             if (!patientInfo.habits) patientInfo.habits = [];
             if (!patientInfo.treatmentMemo) patientInfo.treatmentMemo = '';
+            if (!patientInfo.birthDate) patientInfo.birthDate = '';
             if (!patientInfo.inputDate) {
                 const recordDate = record.timestamp.toDate();
                 const yyyy = recordDate.getFullYear();
@@ -2239,13 +2303,13 @@
             const riskLevelHTML = getRiskLevelHTML(totalScore);
 
             const proceduresText = (patientInfo.procedures && patientInfo.procedures.length > 0) 
-                                     ? patientInfo.procedures.map(proc => {
-                                         if (proc.startsWith('BW') || proc.startsWith('口腔内写真')) {
-                                              return `<strong style="color: red;">${proc}</strong>`;
-                                         }
-                                         return proc;
-                                       }).join('・')
-                                     : '記載なし';
+                                 ? patientInfo.procedures.map(proc => {
+                                     if (proc.startsWith('BW') || proc.startsWith('口腔内写真')) {
+                                         return `<strong style="color: red;">${proc}</strong>`;
+                                     }
+                                     return proc;
+                                   }).join('・')
+                                 : '記載なし';
             
             const specialGoods = ['なし', '本日の状態に合わせて選んでほしい', '相談したい'];
             let goodsHTML = '';
@@ -2550,6 +2614,139 @@
             }
         }
         
+        async function loadLatestRecordForPrefill(patientNumber) {
+            const q = query(
+                collection(db, "kids-records"),
+                where("patientInfo.number", "==", patientNumber),
+                orderBy("timestamp", "desc"),
+                limit(1)
+            );
+
+            try {
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const latestRecord = querySnapshot.docs[0].data();
+                    prefillData(latestRecord);
+                    showMessage("前回データを読み込みました");
+                } else {
+                    // 新規患者の場合
+                    birthDateS1Input.style.display = 'block';
+                    birthDateDisplay.style.display = 'none';
+                    birthDateS1Input.value = '';
+                    patientInfo.birthDate = '';
+                    previousOralCareGoods = []; 
+                    lastVisitGroup.style.display = 'none'; 
+                }
+            } catch (e) {
+                console.error("Error loading latest record for prefill: ", e);
+            }
+        }
+        
+        function calculateAge(birthDate, currentDate) {
+            let years = currentDate.getFullYear() - birthDate.getFullYear();
+            let months = currentDate.getMonth() - birthDate.getMonth();
+            let days = currentDate.getDate() - birthDate.getDate();
+
+            if (days < 0) {
+                months--;
+                const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            return { years, months };
+        }
+
+        function displayBirthDateAndAge(birthDateStr, inputDateStr) {
+            if (birthDateStr) {
+                birthDateS1Input.style.display = 'none';
+                birthDateDisplay.style.display = 'flex';
+
+                const birthDate = new Date(birthDateStr);
+                const inputDate = new Date(inputDateStr);
+                
+                const age = calculateAge(birthDate, inputDate);
+                
+                const formattedBirthDate = `${birthDate.getFullYear()}年${birthDate.getMonth() + 1}月${birthDate.getDate()}日`;
+                birthDateDisplay.textContent = `生年月日: ${formattedBirthDate}（現在の年齢: ${age.years}歳${age.months}ヶ月）`;
+            } else {
+                birthDateS1Input.style.display = 'block';
+                birthDateDisplay.style.display = 'none';
+            }
+        }
+
+        function prefillData(record) {
+            
+            // MIHとダイアグは引き継がないので、現在のpatientInfoからリセットする
+            patientInfo.mihStatus = {};
+            patientInfo.diagValues = {};
+
+            // 引き継ぐ項目を patientInfo に設定
+            if (record.patientInfo.dmfValue) patientInfo.dmfValue = record.patientInfo.dmfValue;
+            if (record.patientInfo.malocclusion) patientInfo.malocclusion = [...record.patientInfo.malocclusion];
+            if (record.patientInfo.habits) patientInfo.habits = [...record.patientInfo.habits];
+            if (record.patientInfo.teethStatus) patientInfo.teethStatus = { ...record.patientInfo.teethStatus }; // 歯式は引き継ぐ
+
+
+            if (record.patientInfo.birthDate) {
+                patientInfo.birthDate = record.patientInfo.birthDate;
+                displayBirthDateAndAge(patientInfo.birthDate, patientInfo.inputDate);
+            } else {
+                patientInfo.birthDate = '';
+                birthDateS1Input.style.display = 'block';
+                birthDateDisplay.style.display = 'none';
+            }
+            
+            // Handle Last Visit Date display
+            const lastVisitDate = record.timestamp.toDate();
+            const yyyy = lastVisitDate.getFullYear();
+            const mm = String(lastVisitDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(lastVisitDate.getDate()).padStart(2, '0');
+            let lastVisitText = `${yyyy}年${mm}月${dd}日`;
+            
+            const lastProcedures = record.patientInfo.procedures || [];
+            if (lastProcedures.includes('フッ化物塗布')) {
+                lastVisitText += '（前回フッ化物塗布）';
+            }
+            lastVisitDisplay.textContent = lastVisitText;
+            lastVisitGroup.style.display = 'block';
+
+            if (record.answers.oralCareGoods) {
+                previousOralCareGoods = [...record.answers.oralCareGoods];
+            } else {
+                previousOralCareGoods = [];
+            }
+
+
+            // フッ化物塗布間隔のロジック
+            const today = new Date();
+            const diffTime = Math.abs(today - lastVisitDate);
+            const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44); // 1ヶ月の平均日数
+
+            if (diffMonths <= 3 && record.patientInfo.fluoride === 'OK') {
+                patientInfo.fluoride = 'OK';
+            } else if (diffMonths >= 4) {
+                patientInfo.fluoride = '未達成';
+            } else {
+                patientInfo.fluoride = ''; // 3-4ヶ月の間、または前回が未達成の場合は引き継がない
+            }
+            
+            // 歯磨き粉は引き継がない
+            answers.toothpaste = [];
+
+            // UIを更新
+            document.querySelectorAll('#fluorideRadioGroup .radio-label').forEach(l => l.classList.remove('selected'));
+            document.querySelectorAll('#fluorideRadioGroup input').forEach(i => {
+                i.checked = (i.value === patientInfo.fluoride);
+                if (i.checked) {
+                    i.parentElement.classList.add('selected');
+                }
+            });
+            checkScreen1Completion();
+        }
+
         function showScreen(screen) {
             Object.values(screens).forEach(s => s.classList.remove('active'));
             if (screen) screen.classList.add('active');
@@ -2563,6 +2760,7 @@
             tonguePressureValueInput.value = patientInfo.tonguePressure || '';
             lipClosureForceValueInput.value = patientInfo.lipClosureForce || '';
             treatmentMemoInput.value = patientInfo.treatmentMemo || '';
+            birthDateInput.value = patientInfo.birthDate || '';
             
             bwValueSelect.value = '';
             photoValueSelect.value = '';
@@ -2644,6 +2842,10 @@
         
         startBtn.addEventListener('click', () => {
             patientInfo.startTime = new Date();
+            // If birth date was entered in S1, save it
+            if (birthDateS1Input.value) {
+                patientInfo.birthDate = birthDateS1Input.value;
+            }
             showScreen(screens.screen2);
             displayQuestion();
         });
@@ -2687,6 +2889,7 @@
             patientInfo.tonguePressure = tonguePressureValueInput.value;
             patientInfo.lipClosureForce = lipClosureForceValueInput.value;
             patientInfo.treatmentMemo = treatmentMemoInput.value;
+            patientInfo.birthDate = birthDateInput.value;
 
             patientInfo.procedures = [];
             document.querySelectorAll('#proceduresGroup input[type="checkbox"]:checked').forEach(checkbox => {
@@ -2784,6 +2987,24 @@
             patientInfo.number = e.target.value;
             checkScreen1Completion();
         });
+        
+        patientNumberInput.addEventListener('blur', (e) => {
+            const number = e.target.value.trim();
+            if (number) {
+                loadLatestRecordForPrefill(number);
+            } else {
+                birthDateS1Input.style.display = 'block';
+                birthDateDisplay.style.display = 'none';
+                lastVisitGroup.style.display = 'none';
+                patientInfo.birthDate = '';
+                previousOralCareGoods = [];
+            }
+        });
+        
+        birthDateS1Input.addEventListener('change', (e) => {
+             patientInfo.birthDate = e.target.value;
+        });
+
         searchNumberInput.addEventListener('input', handleNumericInput);
         pcrValueInput.addEventListener('input', handleNumericInput);
         tonguePressureValueInput.addEventListener('input', handleNumericInput);
@@ -2791,11 +3012,15 @@
 
         inputDate.addEventListener('input', (e) => {
             patientInfo.inputDate = e.target.value;
+            // 生年月日が表示されていれば、年齢を再計算して更新
+            if (patientInfo.birthDate) {
+                displayBirthDateAndAge(patientInfo.birthDate, patientInfo.inputDate);
+            }
             checkScreen1Completion();
         });
 
         editGoodsBtn.addEventListener('click', () => {
-            populateGoodsList(modalGoodsContainer, false);
+            populateGoodsList(modalGoodsContainer, false, previousOralCareGoods);
             goodsModal.style.display = 'flex';
         });
 
