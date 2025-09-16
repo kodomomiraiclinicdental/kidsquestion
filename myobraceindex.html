@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dental Canvas Pro - Myobrace</title>
+    <style>
+        :root {
+            --myobrace-blue: #00a1e4;
+            --myobrace-green: #8dc63f;
+            --light-gray: #f0f4f7;
+            --text-dark: #333;
+            --text-light: #666;
+            --status-safe: #28a745;
+            --status-low: #ffc107;
+            --status-out: #dc3545;
+            --danger-red: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: var(--light-gray);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: var(--myobrace-blue);
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header h2 {
+            color: var(--text-light);
+            font-size: 20px;
+            font-weight: normal;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label, .section-title {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: var(--text-dark);
+            font-weight: 600;
+            border-left: 5px solid var(--myobrace-blue);
+            padding-left: 10px;
+        }
+        
+        input[type="text"], input[type="number"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--myobrace-blue);
+            box-shadow: 0 0 0 3px rgba(0, 161, 228, 0.1);
+        }
+
+        .btn {
+            padding: 18px 40px;
+            background: var(--myobrace-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: inline-block;
+            text-align: center;
+            position: relative; /* For badge positioning */
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 161, 228, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary { background-color: #6c757d; }
+        .btn-danger { background-color: var(--danger-red); }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+        }
+        
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 50px;
+        }
+        
+        .btn-menu {
+            padding: 25px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .badge {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: var(--danger-red);
+            color: white;
+            border-radius: 50%;
+            padding: 5px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .badge.visible {
+            display: block;
+        }
+
+        /* Inventory Screen Styles */
+        .inventory-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .inventory-table th, .inventory-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .inventory-table th {
+            background-color: var(--light-gray);
+            font-weight: 600;
+        }
+        .inventory-table td {
+            background-color: #fff;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .status-safe { background-color: var(--status-safe); }
+        .status-low { background-color: var(--status-low); }
+        .status-out { background-color: var(--status-out); }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .stock-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stock-value {
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+            cursor: pointer; /* Change cursor to indicate it's clickable */
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .stock-value:hover {
+            background-color: #f0f4f7;
+        }
+        .stock-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid var(--myobrace-blue);
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-stock {
+            padding: 5px 10px;
+            font-size: 16px;
+            line-height: 1;
+            border-radius: 50%;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            padding-right: 15px;
+            color: #ccc;
+        }
+        tr.dragging {
+            opacity: 0.5;
+            background: #f9f9f9;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 22px;
+            color: var(--text-dark);
+        }
+        .modal-body {
+            overflow-y: auto;
+            padding-right: 15px;
+            margin-right: -15px;
+        }
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 30px;
+            flex-shrink: 0;
+        }
+        
+        /* --- Order List Modal Styles --- */
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .order-item span {
+            flex-grow: 1;
+        }
+        .order-quantity-input {
+            width: 60px;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-left: 15px;
+        }
+        .order-quantity-input:focus {
+            outline: none;
+            border-color: var(--myobrace-blue);
+        }
+
+        /* --- ME Check Form Styles --- */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-choice {
+            flex-grow: 1;
+            background-color: #f0f4f7;
+            color: var(--text-dark);
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            font-size: 16px;
+        }
+        .btn-choice:hover:not(.active) {
+            background-color: #e0e6eb;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-choice.active {
+            background-color: var(--myobrace-green);
+            color: white;
+            border-color: var(--myobrace-green);
+            font-weight: bold;
+        }
+        textarea {
+            min-height: 80px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Screen 0: Main Menu -->
+        <div id="screen_main_menu" class="screen">
+            <div class="header">
+                <h1>Myobrace®</h1>
+                <h2>総合管理メニュー</h2>
+            </div>
+            <div class="menu-grid">
+                <button id="goToMeCheckBtn" class="btn btn-menu">ME Check Form</button>
+                <button id="goToInventoryBtn" class="btn btn-menu">
+                    Myobrace在庫管理
+                    <span id="inventory-badge" class="badge"></span>
+                </button>
+                <button class="btn btn-menu" disabled>Myobrace患者基本情報</button>
+                <button class="btn btn-menu" disabled>MOEシート</button>
+                <button class="btn btn-menu" disabled>Myobrace Consultation</button>
+                <button class="btn btn-menu" disabled>Myobrace Start</button>
+            </div>
+        </div>
+
+        <!-- Screen 1: ME Check Form -->
+        <div id="screen_me_check" class="screen">
+            <div class="header">
+                <h1>ME Check</h1>
+            </div>
+            
+            <!-- === ME Check Form Content Starts Here === -->
+            <div id="meCheckForm">
+                <div class="form-group">
+                    <label for="mePatientId">カルテ番号</label>
+                    <input type="text" id="mePatientId" placeholder="カルテ番号を入力">
+                </div>
+                 <div class="form-group">
+                    <label for="mePatientName">氏名</label>
+                    <input type="text" id="mePatientName" placeholder="患者様の氏名を入力">
+                </div>
+                 <div class="form-group">
+                    <label for="meDate">日付</label>
+                    <input type="date" id="meDate">
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title">1. 呼吸の評価</h3>
+                    <p>安静時の呼吸は鼻呼吸ですか？</p>
+                    <div class="btn-group" data-group="breathing">
+                        <button type="button" class="btn btn-choice" data-value="good">はい</button>
+                        <button type="button" class="btn btn-choice" data-value="bad">いいえ</button>
+                    </div>
+                    <textarea id="meBreathingNotes" placeholder="特記事項（例：口が半開き、いびきをかく等）" rows="3" style="margin-top: 15px;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title">2. 口唇の評価</h3>
+                    <p>安静時の口唇は閉鎖していますか？</p>
+                    <div class="btn-group" data-group="lips">
+                        <button type="button" class="btn btn-choice" data-value="good">はい</button>
+                        <button type="button" class="btn btn-choice" data-value="bad">いいえ</button>
+                    </div>
+                    <textarea id="meLipsNotes" placeholder="特記事項（例：下唇を噛む癖、お口ポカン等）" rows="3" style="margin-top: 15px;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <h3 class="section-title">3. 舌の評価</h3>
+                    <p>安静時の舌の位置は上顎についていますか？（スポット）</p>
+                    <div class="btn-group" data-group="tongue">
+                        <button type="button" class="btn btn-choice" data-value="good">はい</button>
+                        <button type="button" class="btn btn-choice" data-value="bad">いいえ</button>
+                    </div>
+                    <textarea id="meTongueNotes" placeholder="特記事項（例：舌が歯の間から見える、発音が不明瞭等）" rows="3" style="margin-top: 15px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <h3 class="section-title">4. 嚥下の評価</h3>
+                    <p>嚥下時にオトガイ筋の緊張は見られませんか？</p>
+                    <div class="btn-group" data-group="swallowing">
+                        <button type="button" class="btn btn-choice" data-value="good">はい</button>
+                        <button type="button" class="btn btn-choice" data-value="bad">いいえ</button>
+                    </div>
+                    <textarea id="meSwallowingNotes" placeholder="特記事項（例：飲むときにくちゃくちゃ音がする等）" rows="3" style="margin-top: 15px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <h3 class="section-title">総合所見・メモ</h3>
+                    <textarea id="meOverallNotes" placeholder="本日の総合的な所見や次回の申し送り事項などを記入" rows="5"></textarea>
+                </div>
+            </div>
+            <!-- === ME Check Form Content Ends Here === -->
+
+            <div class="navigation">
+                <button class="btn btn-secondary" data-nav="mainMenu">← メニューへ戻る</button>
+                <button class="btn" id="saveMeCheckBtn">記録する</button>
+            </div>
+        </div>
+        
+        <!-- Screen 2: Inventory Management -->
+        <div id="screen_inventory" class="screen">
+            <div class="header">
+                <h1>Myobrace®</h1>
+                <h2>在庫管理</h2>
+            </div>
+            <div class="inventory-controls">
+                 <button class="btn" id="showNewDeviceModalBtn">+ 新規装置を登録</button>
+                 <button class="btn btn-danger" id="showOrderListBtn">要発注リストを見る</button>
+            </div>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>シリーズ</th>
+                        <th>サイズ</th>
+                        <th>色</th>
+                        <th>在庫数</th>
+                        <th>ステータス</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryList">
+                </tbody>
+            </table>
+            <div class="navigation">
+                <button class="btn btn-secondary" data-nav="mainMenu">← メニューへ戻る</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="deviceModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="deviceModalTitle">新規装置を登録</h3>
+                <button class="btn-close" data-close-modal="deviceModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                 <input type="hidden" id="editDeviceId">
+                <div class="form-group">
+                    <label for="deviceSeries">シリーズ</label>
+                    <input type="text" id="deviceSeries" placeholder="例: K1, T2">
+                </div>
+                <div class="form-group">
+                    <label for="deviceSize">サイズ</label>
+                    <input type="text" id="deviceSize" placeholder="例: M, L, 3">
+                </div>
+                <div class="form-group">
+                    <label for="deviceColor">色</label>
+                     <input type="text" id="deviceColor" placeholder="例: ピンク, ブルー">
+                </div>
+                <div class="form-group">
+                    <label for="deviceStock">在庫数</label>
+                    <input type="number" id="deviceStock" placeholder="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal="deviceModal">キャンセル</button>
+                <button class="btn" id="saveDeviceBtn">登録する</button>
+            </div>
+        </div>
+    </div>
+    <div id="orderListModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">要発注リスト</h3>
+                <button class="btn-close" data-close-modal="orderListModal">&times;</button>
+            </div>
+            <div class="modal-body" id="orderListBody">
+                <!-- Order list items will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal="orderListModal">閉じる</button>
+                <button class="btn" id="createOrderMailBtn">発注用メールを作成</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, doc, updateDoc, deleteDoc, writeBatch, query, where, orderBy, increment, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        
+        // --- Firebase Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbc7VsXUFiblYv4csNSzUJoqp3pBNa68A",
+            authDomain: "kidsquestionapp.firebaseapp.com",
+            projectId: "kidsquestionapp",
+            storageBucket: "kidsquestionapp.firebasestorage.app",
+            messagingSenderId: "1007044552648",
+            appId: "1:1007044552648:web:d5d4661f2d9f05f819c2fd"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- Main App Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DOM Elements ---
+            const screens = {
+                mainMenu: document.getElementById('screen_main_menu'),
+                meCheck: document.getElementById('screen_me_check'),
+                inventory: document.getElementById('screen_inventory'),
+            };
+            const inventoryBadge = document.getElementById('inventory-badge');
+            const inventoryList = document.getElementById('inventoryList');
+
+            // --- Modals ---
+            const deviceModal = document.getElementById('deviceModal');
+            const orderListModal = document.getElementById('orderListModal');
+
+            // --- Modal close helpers (overlay click & Esc key) ---
+            [deviceModal, orderListModal].forEach((modal) => {
+              modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                  closeModal(modal);
+                }
+              });
+            });
+
+            document.addEventListener('keydown', (e) => {
+              if (e.key === 'Escape') {
+                [deviceModal, orderListModal].forEach((modal) => {
+                    if (modal.classList.contains('active')) {
+                        closeModal(modal);
+                    }
+                });
+              }
+            });
+            
+            // --- Functions ---
+            const showScreen = (screenId) => {
+                Object.values(screens).forEach(s => s.classList.remove('active'));
+                if (screens[screenId]) {
+                    screens[screenId].classList.add('active');
+                }
+            };
+            
+            const openModal = (modal) => modal.classList.add('active');
+            const closeModal = (modal) => modal.classList.remove('active');
+
+            // --- Inventory Management ---
+            const renderInventory = async () => {
+                inventoryList.innerHTML = '<tr><td colspan="7">読み込み中...</td></tr>';
+                try {
+                    const q = query(collection(db, "myobrace-inventory"), orderBy("order", "asc"));
+                    const querySnapshot = await getDocs(q);
+                    inventoryList.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        inventoryList.innerHTML = '<tr><td colspan="7">登録されている装置はありません。</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const item = { id: doc.id, ...doc.data() };
+                        const stock = item.stockCount || 0;
+                        let statusClass = 'status-safe';
+                        let statusText = '在庫あり';
+                        if (stock <= 2 && stock > 0) {
+                            statusClass = 'status-low';
+                            statusText = '残りわずか';
+                        } else if (stock === 0) {
+                            statusClass = 'status-out';
+                            statusText = '在庫切れ';
+                        }
+
+                        const tr = document.createElement('tr');
+                        tr.dataset.id = item.id;
+                        tr.draggable = true;
+                        tr.innerHTML = `
+                            <td class="drag-handle">☰</td>
+                            <td>${item.series}</td>
+                            <td>${item.size}</td>
+                            <td>${item.color}</td>
+                            <td>
+                                <div class="stock-control">
+                                    <button class="btn btn-small btn-stock btn-decrease">-</button>
+                                    <span class="stock-value">${stock}</span>
+                                    <button class="btn btn-small btn-stock btn-increase">+</button>
+                                </div>
+                            </td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td class="action-buttons">
+                                <button class="btn btn-small btn-danger btn-delete">削除</button>
+                            </td>
+                        `;
+                        inventoryList.appendChild(tr);
+                    });
+                } catch (error) {
+                    console.error("Error fetching inventory:", error);
+                    inventoryList.innerHTML = '<tr><td colspan="7">データの読み込みに失敗しました。</td></tr>';
+                }
+            };
+
+            const checkAndShowOrderAlert = async () => {
+                const q = query(collection(db, "myobrace-inventory"), where("stockCount", "<=", 2));
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) {
+                    inventoryBadge.classList.remove('visible');
+                } else {
+                    inventoryBadge.textContent = snapshot.size;
+                    inventoryBadge.classList.add('visible');
+                }
+            };
+
+            const initializeInventoryData = async () => {
+                const inventoryRef = collection(db, "myobrace-inventory");
+                const q = query(inventoryRef, limit(1));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    console.log("Seeding initial data from catalog...");
+                    const batch = writeBatch(db);
+                    const initialInventoryData = [
+                        // Myobrace for Juniors
+                        { series: 'J1', size: 'M', color: 'ブルー' }, { series: 'J1', size: 'M', color: 'ピンク' },
+                        { series: 'J1', size: 'L', color: 'ブルー' }, { series: 'J1', size: 'L', color: 'ピンク' },
+                        { series: 'J2', size: 'M', color: 'ブルー' }, { series: 'J2', size: 'M', color: 'ピンク' },
+                        { series: 'J2', size: 'L', color: 'ブルー' }, { series: 'J2', size: 'L', color: 'ピンク' },
+                        { series: 'J3', size: 'M', color: 'ブルー' }, { series: 'J3', size: 'M', color: 'ピンク' },
+                        { series: 'J3', size: 'L', color: 'ブルー' }, { series: 'J3', size: 'L', color: 'ピンク' },
+                        // Myobrace for Kids
+                        { series: 'KO', size: 'M', color: 'ブルー' }, { series: 'KO', size: 'M', color: 'クリア' },
+                        { series: 'K1', size: 'S', color: 'ブルー' }, { series: 'K1', size: 'S', color: 'ピンク' }, { series: 'K1', size: 'S', color: 'クリア' },
+                        { series: 'K1', size: 'M', color: 'ブルー' }, { series: 'K1', size: 'M', color: 'ピンク' }, { series: 'K1', size: 'M', color: 'クリア' },
+                        { series: 'K1', size: 'L', color: 'ブルー' }, { series: 'K1', size: 'L', color: 'ピンク' }, { series: 'K1', size: 'L', color: 'クリア' },
+                        { series: 'K1H', size: 'M', color: 'クリア' },
+                        { series: 'K2', size: 'S', color: 'ブルー' }, { series: 'K2', size: 'S', color: 'ピンク' }, { series: 'K2', size: 'S', color: 'クリア' },
+                        { series: 'K2', size: 'M', color: 'ブルー' }, { series: 'K2', size: 'M', color: 'ピンク' }, { series: 'K2', size: 'M', color: 'クリア' },
+                        { series: 'K2', size: 'L', color: 'ブルー' }, { series: 'K2', size: 'L', color: 'ピンク' }, { series: 'K2', size: 'L', color: 'クリア' },
+                        { series: 'K3', size: 'S', color: 'ブルー' },
+                        { series: 'K3', size: 'M', color: 'ブルー' }, { series: 'K3', size: 'M', color: 'ピンク' }, { series: 'K3', size: 'M', color: 'クリア' },
+                        { series: 'K3', size: 'L', color: 'ブルー' },
+                        // Myobrace for Kids Broad
+                        { series: 'K1 Broad', size: 'M', color: 'クリア' },
+                        { series: 'K2 Broad', size: 'M', color: 'クリア' },
+                        { series: 'K3 Broad', size: 'M', color: 'クリア' },
+                        // Myobrace for Teens
+                        { series: 'T1', size: 'M', color: 'クリア' }, { series: 'T1', size: 'L', color: 'クリア' },
+                        { series: 'T1BWS', size: 'M', color: 'クリア' },
+                        { series: 'T2', size: 'M', color: 'クリア' }, { series: 'T2', size: 'L', color: 'クリア' },
+                        { series: 'T3N', size: '1', color: 'クリア' }, { series: 'T3N', size: '2', color: 'クリア' }, { series: 'T3N', size: '3', color: 'クリア' }, { series: 'T3N', size: '4', color: 'クリア' }, { series: 'T3N', size: '5', color: 'クリア' }, { series: 'T3N', size: '6', color: 'クリア' }, { series: 'T3N', size: '7', color: 'クリア' },
+                        { series: 'T3', size: '1', color: 'クリア' }, { series: 'T3', size: '2', color: 'クリア' }, { series: 'T3', size: '3', color: 'クリア' }, { series: 'T3', size: '4', color: 'クリア' }, { series: 'T3', size: '5', color: 'クリア' }, { series: 'T3', size: '6', color: 'クリア' }, { series: 'T3', size: '7', color: 'クリア' },
+                        { series: 'T4', size: 'M', color: 'ブルー' }, { series: 'T4', size: 'L', color: 'ブルー' },
+                        // Myobrace for Adults
+                        { series: 'A1', size: 'M', color: 'クリア' }, { series: 'A1', size: 'L', color: 'クリア' },
+                        { series: 'A2', size: 'M', color: 'クリア' }, { series: 'A2', size: 'L', color: 'クリア' },
+                        { series: 'A3', size: 'M', color: 'クリア' }, { series: 'A3', size: 'L', color: 'クリア' },
+                        // Myobrace for Braces
+                        { series: 'B1', size: 'M', color: 'クリア' }, { series: 'B1', size: 'L', color: 'クリア' },
+                        { series: 'B1 Ling', size: 'M', color: 'クリア' },
+                        { series: 'B2', size: 'M', color: 'クリア' }, { series: 'B2', size: 'L', color: 'クリア' },
+                        { series: 'B3', size: 'M', color: 'クリア' },
+                        // Myobrace for Interceptive Class III
+                        { series: 'i-3N', size: 'S', color: 'クリア' }, { series: 'i-3N', size: 'S', color: 'イエロー' },
+                        { series: 'i-3N', size: 'M', color: 'クリア' }, { series: 'i-3N', size: 'M', color: 'イエロー' },
+                        { series: 'i-3N', size: 'L', color: 'クリア' }, { series: 'i-3N', size: 'L', color: 'イエロー' },
+                        { series: 'i-3', size: 'S', color: 'クリア' }, { series: 'i-3', size: 'S', color: 'イエロー' },
+                        { series: 'i-3', size: 'M', color: 'クリア' }, { series: 'i-3', size: 'M', color: 'イエロー' },
+                        { series: 'i-3', size: 'L', color: 'クリア' }, { series: 'i-3', size: 'L', color: 'イエロー' },
+                        { series: 'i-3H', size: 'M', color: 'クリア' },
+                        // Myobrace for Permanent Dentition Class III
+                        { series: 'P-3N', size: 'M', color: 'グリーン' }, { series: 'P-3N', size: 'M', color: 'クリア' },
+                        { series: 'P-3', size: 'M', color: 'グリーン' }, { series: 'P-3', size: 'M', color: 'クリア' },
+                        { series: 'P-3H', size: 'S', color: 'グリーン' }, { series: 'P-3H', size: 'S', color: 'クリア' },
+                        { series: 'P-3H', size: 'M', color: 'グリーン' }, { series: 'P-3H', size: 'M', color: 'クリア' },
+                        { series: 'P-3H', size: 'L', color: 'グリーン' }, { series: 'P-3H', size: 'L', color: 'クリア' },
+                    ];
+                    initialInventoryData.forEach((item, index) => {
+                        const docRef = doc(inventoryRef); 
+                        batch.set(docRef, { ...item, stockCount: 0, order: index, createdAt: serverTimestamp() });
+                    });
+                    await batch.commit();
+                }
+            };
+
+            // --- Event Listeners ---
+            document.body.addEventListener('click', async (e) => {
+                // Screen Navigation
+                if (e.target.dataset.nav) {
+                    showScreen(e.target.dataset.nav);
+                }
+                if (e.target.id === 'goToInventoryBtn') {
+                    showScreen('inventory');
+                    await renderInventory();
+                }
+                if (e.target.id === 'goToMeCheckBtn') {
+                    showScreen('meCheck');
+                }
+
+                // Modals
+                if (e.target.dataset.closeModal) {
+                    const modal = document.getElementById(e.target.dataset.closeModal);
+                    if(modal) closeModal(modal);
+                }
+                if (e.target.id === 'showNewDeviceModalBtn') {
+                    document.getElementById('deviceModalTitle').textContent = "新規装置を登録";
+                    document.getElementById('editDeviceId').value = "";
+                    document.getElementById('deviceSeries').value = "";
+                    document.getElementById('deviceSize').value = "";
+                    document.getElementById('deviceColor').value = "";
+                    document.getElementById('deviceStock').value = "";
+                    openModal(deviceModal);
+                }
+                if (e.target.id === 'saveDeviceBtn') {
+                    const series = document.getElementById('deviceSeries').value.trim();
+                    const size = document.getElementById('deviceSize').value.trim();
+                    const color = document.getElementById('deviceColor').value.trim();
+                    const stockCount = parseInt(document.getElementById('deviceStock').value, 10) || 0;
+                    const id = document.getElementById('editDeviceId').value;
+
+                    if (!series || !size || !color) {
+                        alert('シリーズ、サイズ、色を入力してください。');
+                        return;
+                    }
+                    
+                    try {
+                        if (id) {
+                            await updateDoc(doc(db, "myobrace-inventory", id), { series, size, color, stockCount });
+                        } else {
+                            const q = query(collection(db, "myobrace-inventory"), orderBy("order", "desc"), limit(1));
+                            const lastDoc = (await getDocs(q)).docs[0];
+                            const newOrder = lastDoc ? (lastDoc.data().order || 0) + 1 : 0;
+                            await addDoc(collection(db, "myobrace-inventory"), { series, size, color, stockCount, order: newOrder, createdAt: serverTimestamp() });
+                        }
+                        closeModal(deviceModal);
+                        await renderInventory();
+                        await checkAndShowOrderAlert();
+                    } catch (error) {
+                        console.error("Error saving device: ", error);
+                        alert("保存中にエラーが発生しました。");
+                    }
+                }
+                // ---【修正箇所】要発注リストの表示 ---
+                if (e.target.id === 'showOrderListBtn') {
+                    const q = query(collection(db, "myobrace-inventory"), where("stockCount", "<=", 2));
+                    const snapshot = await getDocs(q);
+                    const orderListBody = document.getElementById('orderListBody');
+                    if (snapshot.empty) {
+                        orderListBody.innerHTML = '<p>現在、発注が必要な装置はありません。</p>';
+                        document.getElementById('createOrderMailBtn').disabled = true;
+                    } else {
+                        let html = '';
+                        snapshot.forEach(doc => {
+                            const item = doc.data();
+                            html += `
+                                <div class="order-item">
+                                    <span>${item.series} - ${item.size} (${item.color})</span>
+                                    <input type="number" class="order-quantity-input" value="3" min="1">
+                                </div>
+                            `;
+                        });
+                        orderListBody.innerHTML = html;
+                        document.getElementById('createOrderMailBtn').disabled = false;
+                    }
+                    openModal(orderListModal);
+                }
+                // ---【修正箇所】発注メール作成機能 ---
+                if (e.target.id === 'createOrderMailBtn') {
+                    const recipient = 'yatabe@orthika.jp';
+                    const subject = 'マイオブレースの注文をお願い致します';
+                    
+                    const orderItems = document.getElementById('orderListBody').querySelectorAll('.order-item');
+                    const itemsList = Array.from(orderItems).map(item => {
+                        const name = item.querySelector('span').textContent;
+                        const quantity = item.querySelector('.order-quantity-input').value;
+                        return `${name} ${quantity}個`;
+                    }).join('\n');
+
+                    const body = `大変お世話になっております。\nマイオブレースの注文をお願い致します。\n\n${itemsList}\n\nこどもみらいクリニックデンタル`;
+                    
+                    const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    window.location.href = mailtoLink;
+                }
+
+                // Inventory Table Actions
+                const tr = e.target.closest('tr');
+                if (tr && tr.dataset.id) {
+                    const id = tr.dataset.id;
+                    const deviceRef = doc(db, "myobrace-inventory", id);
+                    let shouldUpdate = false;
+
+                    if (e.target.classList.contains('btn-increase')) {
+                        await updateDoc(deviceRef, { stockCount: increment(1) });
+                        shouldUpdate = true;
+                    } else if (e.target.classList.contains('btn-decrease')) {
+                        await updateDoc(deviceRef, { stockCount: increment(-1) });
+                        shouldUpdate = true;
+                    } else if (e.target.classList.contains('btn-delete')) {
+                        if (confirm('この装置をリストから削除しますか？この操作は元に戻せません。')) {
+                            await deleteDoc(deviceRef);
+                            shouldUpdate = true;
+                        }
+                    }
+                    
+                    if (shouldUpdate) {
+                        await renderInventory();
+                        await checkAndShowOrderAlert();
+                    }
+                }
+            });
+
+            // --- ME Check Form Logic ---
+            const meCheckScreen = document.getElementById('screen_me_check');
+            meCheckScreen.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-choice')) {
+                    const group = e.target.closest('.btn-group');
+                    if (group) {
+                        group.querySelectorAll('.btn-choice').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                }
+            });
+            
+            // --- 在庫数直接編集機能 ---
+            inventoryList.addEventListener('dblclick', (e) => {
+                if (e.target.classList.contains('stock-value')) {
+                    const span = e.target;
+                    // 他の行で編集中なら何もしない
+                    if (inventoryList.querySelector('.stock-input')) return;
+
+                    const originalValue = span.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'stock-input';
+                    input.value = originalValue;
+                    input.min = '0';
+
+                    span.parentElement.replaceChild(input, span);
+                    input.focus();
+                    input.select();
+
+                    const updateStock = async () => {
+                        const newValue = input.value;
+                        if (newValue === originalValue) {
+                            await renderInventory();
+                            return;
+                        }
+
+                        const newStockCount = parseInt(newValue, 10);
+                        if (isNaN(newStockCount) || newStockCount < 0) {
+                            alert('有効な数値を入力してください。');
+                            await renderInventory();
+                            return;
+                        }
+
+                        const tr = input.closest('tr');
+                        const id = tr.dataset.id;
+                        const deviceRef = doc(db, "myobrace-inventory", id);
+
+                        try {
+                            await updateDoc(deviceRef, { stockCount: newStockCount });
+                            await renderInventory();
+                            await checkAndShowOrderAlert();
+                        } catch (error) {
+                            console.error("Error updating stock:", error);
+                            alert("在庫数の更新に失敗しました。");
+                            await renderInventory();
+                        }
+                    };
+
+                    input.addEventListener('blur', updateStock);
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            input.blur();
+                        } else if (e.key === 'Escape') {
+                            input.removeEventListener('blur', updateStock);
+                            renderInventory();
+                        }
+                    });
+                }
+            });
+
+
+            // --- Drag and Drop Logic ---
+            let draggedItem = null;
+            inventoryList.addEventListener('dragstart', (e) => {
+                draggedItem = e.target;
+                setTimeout(() => e.target.classList.add('dragging'), 0);
+            });
+            inventoryList.addEventListener('dragend', (e) => {
+                if(draggedItem) draggedItem.classList.remove('dragging');
+                draggedItem = null;
+                updateInventoryOrder();
+            });
+            inventoryList.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(inventoryList, e.clientY);
+                if (afterElement == null) {
+                    if(draggedItem) inventoryList.appendChild(draggedItem);
+                } else {
+                    if(draggedItem) inventoryList.insertBefore(draggedItem, afterElement);
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('tr:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            async function updateInventoryOrder() {
+                const rows = inventoryList.querySelectorAll('tr');
+                const batch = writeBatch(db);
+                rows.forEach((row, index) => {
+                    const docId = row.dataset.id;
+                    if(docId) {
+                        const docRef = doc(db, "myobrace-inventory", docId);
+                        batch.update(docRef, { order: index });
+                    }
+                });
+                try {
+                    await batch.commit();
+                    console.log("Order updated.");
+                } catch(e) {
+                    console.error("Failed to update order:", e);
+                }
+            }
+            
+            // --- App Initialization ---
+            async function main() {
+                showScreen('mainMenu');
+                // Set today's date for ME Check form
+                document.getElementById('meDate').valueAsDate = new Date();
+                await initializeInventoryData();
+                await checkAndShowOrderAlert();
+            }
+
+            main();
+        });
+    </script>
+</body>
+</html>
